@@ -64,7 +64,7 @@
         
         #videoSource { font-size: 0.9rem; color: #888; margin-bottom: 10px; text-align: center; }
         
-        /* Tags (Restored!) */
+        /* Tags */
         .video-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 800px; margin-bottom: 20px; }
         .vid-tag-chip { background: #333; border: 1px solid #555; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
         .vid-tag-chip:hover { background: #d32f2f; border-color: #ff5252; }
@@ -121,7 +121,6 @@
         <button class="spin-btn" onclick="fetchAndSpin()">SPIN 🎰</button>
     </div>
 
-    <!-- Custom Tags Rendered Here -->
     <div class="custom-tags-container" id="customTagsContainer"></div>
 
     <div class="video-container">
@@ -138,29 +137,23 @@
         </div>
     </div>
     <div id="videoSource"></div>
-    <!-- Restored Tags Container -->
     <div class="video-tags" id="videoTagsContainer"></div>
 
-    <!-- Settings & Data Modal -->
+    <!-- Settings Modal -->
     <div id="settingsModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>⚙️ Settings & Data</h2>
                 <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
             </div>
-            
             <h3 style="margin-top: 0; margin-bottom: 10px;">Appearance</h3>
             <select id="themeSelectModal" class="theme-select" style="margin-bottom: 25px;" onchange="changeTheme(this.value)">
                 <option value="default">Dark Theme</option>
                 <option value="cyberpunk">Cyberpunk</option>
                 <option value="retro">Retro Synthwave</option>
             </select>
-
             <h3 style="margin-top: 0; margin-bottom: 5px;">Backup & Sync (Offline)</h3>
-            <p style="font-size: 0.85rem; color: #aaa; margin-top: 0; margin-bottom: 15px;">
-                Download your Favorites, History, Banned Tags, and Custom Chips to a file, then load them on another device.
-            </p>
-            
+            <p style="font-size: 0.85rem; color: #aaa; margin-top: 0; margin-bottom: 15px;">Download your Favorites, History, Banned Tags, and Custom Chips to a file, then load them on another device.</p>
             <button class="data-btn" onclick="exportData()">📦 Download Backup File</button>
             <label for="importFile" class="data-btn">📂 Load Backup File</label>
             <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
@@ -302,7 +295,7 @@
             if (!bannedTags.includes(cleanTag)) {
                 bannedTags.push(cleanTag);
                 localStorage.setItem('roulette_blacklist', JSON.stringify(bannedTags));
-                fetchAndSpin(); // Spin away immediately
+                fetchAndSpin(); 
             }
         }
 
@@ -391,7 +384,6 @@
             return parts.length === 3 ? (parts[0]*3600 + parts[1]*60 + parts[2]) : (parts[0]*60 + parts[1]);
         }
 
-        // Restored Tag Extractor!
         function extractTags(vidObj, apiType) {
             let tags = [];
             try {
@@ -412,7 +404,6 @@
             document.getElementById('videoTitle').innerText = currentVideo.title;
             document.getElementById('videoSource').innerText = `Source: ${currentVideo.source}`;
             
-            // Restored Tags HTML Generator!
             const tagsContainer = document.getElementById('videoTagsContainer');
             if (currentVideo.tags && currentVideo.tags.length > 0) {
                 tagsContainer.innerHTML = currentVideo.tags.map(tag => `<div class="vid-tag-chip" onclick="banTag('${tag}')">${tag}</div>`).join('');
@@ -436,17 +427,25 @@
             const results = await Promise.all([ getEPorner(searchTag), getRedTube(searchTag), getPornhub(searchTag) ]);
             let combined = results.flat();
 
-            // 1. Anti-Cam Spam Filter
-            const searchTagLower = searchTag.toLowerCase();
-            if (!searchTagLower.includes('cam')) {
-                combined = combined.filter(v => {
-                    const titleStr = v.title.toLowerCase();
-                    const tagsStr = (v.tags || []).join(' ').toLowerCase();
-                    return !titleStr.includes('live cam') && !titleStr.includes('myfreecams') && !tagsStr.includes('webcam') && !tagsStr.includes('chaturbate');
-                });
-            }
+            // 1. Aggressive Spam Nuke (Cam & AI)
+            const isCamSearch = searchTag.toLowerCase().includes('cam');
+            combined = combined.filter(v => {
+                const titleStr = v.title.toLowerCase();
+                const tagsArr = v.tags || [];
+                const tagsStr = tagsArr.join(' ').toLowerCase();
 
-            // 2. Blacklist Filter
+                // Nuke AI permanently
+                const aiSpam = /\bai\b/i.test(titleStr) || tagsArr.includes('ai') || titleStr.includes('ai generated') || tagsStr.includes('ai generated') || titleStr.includes('stable diffusion');
+                if (aiSpam) return false;
+
+                // Nuke Cam (unless specifically searching for it)
+                const camSpam = titleStr.includes('live cam') || titleStr.includes('camgirl') || titleStr.includes('myfreecams') || tagsStr.includes('webcam') || tagsStr.includes('chaturbate') || tagsStr.includes('stripchat') || tagsStr.includes('bongacams') || tagsArr.includes('cam') || tagsArr.includes('live');
+                if (!isCamSearch && camSpam) return false;
+
+                return true;
+            });
+
+            // 2. User Blacklist Filter
             if (bannedTags.length > 0) {
                 combined = combined.filter(v => {
                     if (!v.tags || v.tags.length === 0) return true;
@@ -470,7 +469,6 @@
             }
             
             currentVideo = combined[Math.floor(Math.random() * combined.length)];
-            
             window.history.replaceState({}, document.title, window.location.pathname);
             loadVideoIntoPlayer();
         }
