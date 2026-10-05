@@ -40,49 +40,43 @@
         }
         body.theme-retro .wip-badge { background: #00ffff; color: black; }
 
+        * { -webkit-tap-highlight-color: transparent; }
         body { font-family: system-ui, sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; transition: background-color 0.3s, color 0.3s; }
         
         /* Header & Nav */
         .header-container { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;}
         h1 { margin: 0; font-size: 1.8rem; }
         .header-buttons { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;}
-        .menu-btn { background: var(--surface-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: bold; }
+        .menu-btn { background: var(--surface-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; gap: 5px; }
         .menu-btn:hover:not(.disabled-btn) { background: var(--accent-color); color: white; border-color: var(--accent-color); }
-        .theme-select { background: var(--surface-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; cursor: pointer; }
+        .theme-select { background: var(--surface-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; }
 
         /* WIP & Disabled State */
         .disabled-btn { opacity: 0.5; cursor: not-allowed !important; position: relative; }
         .disabled-btn:hover { transform: none !important; color: inherit !important; }
-        .wip-badge {
-            font-size: 0.6rem;
-            background: #ff9800;
-            color: black;
-            padding: 2px 5px;
-            border-radius: 4px;
-            margin-left: 5px;
-            vertical-align: middle;
-            font-weight: bold;
-            text-shadow: none;
-        }
-        .icon-btn .wip-badge {
-            position: absolute;
-            top: -10px;
-            right: -15px;
-        }
+        .wip-badge { font-size: 0.6rem; background: #ff9800; color: black; padding: 2px 5px; border-radius: 4px; margin-left: 5px; font-weight: bold; }
+        .icon-btn .wip-badge { position: absolute; top: -10px; right: -15px; }
 
         /* Navigation Tabs */
-        .tabs { display: flex; gap: 15px; margin-bottom: 20px; background: var(--surface-color); padding: 10px; border-radius: 12px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 800px; box-sizing: border-box; }
+        .tabs { display: flex; gap: 15px; margin-bottom: 15px; background: var(--surface-color); padding: 10px; border-radius: 12px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 800px; box-sizing: border-box; }
         .tab { padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: background 0.2s; border: 1px solid transparent;}
         .tab.active { background: var(--accent-color); color: white; }
         .tab:hover:not(.active) { border-color: var(--border-color); }
 
         /* Controls */
-        .controls { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center;}
+        .controls { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; width: 100%; max-width: 800px;}
         input, select, button { padding: 10px 16px; font-size: 1rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--surface-color); color: var(--text-color); }
-        input { width: 200px; }
+        input { flex-grow: 1; min-width: 150px; max-width: 300px; }
         button.spin-btn { background-color: var(--accent-color); border: none; cursor: pointer; font-weight: bold; color: white;}
         button.spin-btn:hover { background-color: var(--accent-hover); }
         
+        /* Custom Tags */
+        .custom-tags-container { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 800px; margin-bottom: 20px; width: 100%; }
+        .custom-chip { background: var(--surface-color); border: 1px dashed var(--accent-color); padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.2s; }
+        .custom-chip:hover { background: var(--accent-color); color: white; border-style: solid; }
+        .custom-chip .del-btn { color: #ff5252; font-weight: bold; font-size: 1rem; line-height: 1; }
+        .custom-chip:hover .del-btn { color: white; }
+
         /* Video Player */
         .video-container { width: 100%; max-width: 800px; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.6); margin-bottom: 15px; border: 1px solid var(--border-color); }
         iframe { width: 100%; height: 100%; border: none; }
@@ -105,17 +99,15 @@
         .modal-header h2 { margin: 0; font-size: 1.4rem; }
         .close-btn { background: none; border: none; color: #aaa; font-size: 1.5rem; cursor: pointer; }
         
-        /* Lists */
+        /* Data & List Items */
         .video-list { display: flex; flex-direction: column; gap: 10px; }
         .list-item { display: flex; justify-content: space-between; align-items: center; background: var(--surface-color); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border-color); }
         .list-info { display: flex; flex-direction: column; cursor: pointer; flex-grow: 1; }
         .list-title { font-weight: bold; font-size: 0.95rem; margin-bottom: 4px; color: var(--text-color);}
         .list-info:hover .list-title { color: var(--accent-color); }
 
-        /* Roadmap Styling */
-        .roadmap-item { background: var(--surface-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px; }
-        .roadmap-item h3 { margin: 0 0 5px 0; color: var(--accent-color); display: flex; align-items: center; gap: 10px; }
-        .roadmap-item p { margin: 0; font-size: 0.9rem; color: #aaa; line-height: 1.4; }
+        .data-btn { display: block; width: 100%; text-align: center; background: var(--surface-color); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); color: var(--text-color); font-weight: bold; cursor: pointer; margin-bottom: 10px; box-sizing: border-box; text-decoration: none;}
+        .data-btn:hover { background: var(--accent-color); color: white; border-color: var(--accent-color); }
     </style>
 </head>
 <body>
@@ -123,15 +115,11 @@
     <div class="header-container">
         <h1>🎲 Roulette Pro</h1>
         <div class="header-buttons">
-            <select id="themeSelect" class="theme-select" onchange="changeTheme()">
-                <option value="default">Dark Theme</option>
-                <option value="cyberpunk">Cyberpunk</option>
-                <option value="retro">Retro Synthwave</option>
-            </select>
+            <button class="menu-btn" onclick="openModal('settingsModal')">⚙️ Data & Theme</button>
             <button class="menu-btn" onclick="openModal('roadmapModal')">🚀 Roadmap</button>
             <button class="menu-btn" onclick="openModal('historyModal')">🕒 History</button>
             <button class="menu-btn" onclick="openModal('favoritesModal')" style="color: #ffd700; border-color:#ffd700;">⭐ Favs</button>
-            <button class="menu-btn disabled-btn" title="Requires Cloud Database">🏆 Leaderboard <span class="wip-badge">WIP</span></button>
+            <button class="menu-btn disabled-btn" title="Requires Cloud Database">🏆<span class="wip-badge">WIP</span></button>
         </div>
     </div>
 
@@ -145,6 +133,7 @@
     <!-- Controls -->
     <div class="controls">
         <input type="text" id="tagInput" placeholder="Enter search tag..." value="jav">
+        <button class="menu-btn" onclick="saveCustomTag()" title="Save Tag as Chip" style="padding: 10px;">💾 Save</button>
         <select id="durationSelect">
             <option value="any">Any Length</option>
             <option value="short">Short (Under 5m)</option>
@@ -153,6 +142,9 @@
         </select>
         <button class="spin-btn" onclick="fetchAndSpin()">SPIN 🎰</button>
     </div>
+
+    <!-- Custom Tags Rendered Here -->
+    <div class="custom-tags-container" id="customTagsContainer"></div>
 
     <div class="video-container">
         <iframe id="player" src="" allowfullscreen></iframe>
@@ -169,15 +161,38 @@
     </div>
     <div id="videoSource"></div>
 
+    <!-- Settings & Data Modal -->
+    <div id="settingsModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Settings & Data</h2>
+                <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
+            </div>
+            
+            <h3 style="margin-top: 0; margin-bottom: 10px;">Appearance</h3>
+            <select id="themeSelectModal" class="theme-select" style="margin-bottom: 25px;" onchange="changeTheme(this.value)">
+                <option value="default">Dark Theme</option>
+                <option value="cyberpunk">Cyberpunk</option>
+                <option value="retro">Retro Synthwave</option>
+            </select>
+
+            <h3 style="margin-top: 0; margin-bottom: 5px;">Backup & Sync (Offline)</h3>
+            <p style="font-size: 0.85rem; color: #aaa; margin-top: 0; margin-bottom: 15px;">
+                Download your Favorites, History, Banned Tags, and Custom Chips to a file, then load them on another device.
+            </p>
+            
+            <button class="data-btn" onclick="exportData()">📦 Download Backup File</button>
+            <label for="importFile" class="data-btn">📂 Load Backup File</label>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        </div>
+    </div>
+
     <!-- Favorites Modal -->
     <div id="favoritesModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>⭐ Saved Videos</h2>
                 <button class="close-btn" onclick="closeModal('favoritesModal')">&times;</button>
-            </div>
-            <div style="background: #2a2a3a; border-left: 4px solid #e91e63; padding: 10px 15px; border-radius: 4px; font-size: 0.85rem; color: #ccc; margin-bottom: 15px;">
-                <strong>Note:</strong> Favorites are saved locally. They will not sync across different devices until Cloud Accounts are added.
             </div>
             <div class="video-list" id="favoritesList"></div>
         </div>
@@ -202,36 +217,30 @@
                 <button class="close-btn" onclick="closeModal('roadmapModal')">&times;</button>
             </div>
             <p style="color: #aaa; font-size: 0.95rem; margin-top: 0;">We are currently upgrading from a local static site to a Cloud Database (Firebase). Here is what is coming next:</p>
-            
-            <div class="roadmap-item">
-                <h3>💬 Global Comments & Interactions</h3>
-                <p>Leave funny timestamps, reviews, and reactions on individual videos. Comments will be synced globally so all users can read and reply to them in real-time.</p>
+            <div style="background: var(--surface-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+                <h3 style="margin: 0 0 5px 0; color: var(--accent-color);">💬 Global Comments & Interactions</h3>
+                <p style="margin: 0; font-size: 0.9rem; color: #aaa;">Leave funny timestamps and reactions on videos, synced globally.</p>
             </div>
-            
-            <div class="roadmap-item">
-                <h3>🏆 Voting & Leaderboards</h3>
-                <p>A true cross-device "Like" system to rank the best spins of the week and display a live Top 10 Leaderboard across all categories.</p>
+            <div style="background: var(--surface-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+                <h3 style="margin: 0 0 5px 0; color: var(--accent-color);">🏆 Voting & Leaderboards</h3>
+                <p style="margin: 0; font-size: 0.9rem; color: #aaa;">A cross-device "Like" system to rank the Top 10 spins of the week.</p>
             </div>
-
-            <div class="roadmap-item">
-                <h3>☁️ Cloud Account Sync</h3>
-                <p>Log in from your PC, Phone, or Tablet, and have your Favorites list and Blacklisted tags automatically sync across all your devices.</p>
-            </div>
-            
-            <div class="roadmap-item">
-                <h3>🕷️ Advanced Site Scraping</h3>
-                <p>Deploying a Node.js backend to bypass CORS and Cloudflare, allowing us to add sites without open Webmaster APIs (like Rule34Video and SFM Compile Club).</p>
+            <div style="background: var(--surface-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <h3 style="margin: 0 0 5px 0; color: var(--accent-color);">☁️ Cloud Account Sync</h3>
+                <p style="margin: 0; font-size: 0.9rem; color: #aaa;">Log in from your PC or Phone and automatically sync Favorites.</p>
             </div>
         </div>
     </div>
 
     <script>
-        // --- GLOBAL STATE ---
+        // --- GLOBAL STATE & DATABASES ---
         let currentVideo = null; 
         let savedFavorites = JSON.parse(localStorage.getItem('roulette_favorites')) || [];
         let watchHistory = JSON.parse(localStorage.getItem('roulette_history')) || [];
+        let bannedTags = JSON.parse(localStorage.getItem('roulette_blacklist')) || [];
+        let customChips = JSON.parse(localStorage.getItem('roulette_custom_chips')) || [];
 
-        // --- PANIC BUTTON (ESC KEY) ---
+        // --- PANIC BUTTON ---
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 document.body.innerHTML = '<h1 style="text-align:center; margin-top: 20%;">Loading Google...</h1>';
@@ -242,11 +251,10 @@
         // --- THEME ENGINE ---
         function initTheme() {
             const savedTheme = localStorage.getItem('roulette_theme') || 'default';
-            document.getElementById('themeSelect').value = savedTheme;
+            document.getElementById('themeSelectModal').value = savedTheme;
             applyTheme(savedTheme);
         }
-        function changeTheme() {
-            const theme = document.getElementById('themeSelect').value;
+        function changeTheme(theme) {
             localStorage.setItem('roulette_theme', theme);
             applyTheme(theme);
         }
@@ -255,12 +263,86 @@
             if (theme !== 'default') document.body.classList.add(`theme-${theme}`);
         }
 
+        // --- CUSTOM CHIPS SYSTEM ---
+        function renderCustomChips() {
+            const container = document.getElementById('customTagsContainer');
+            if (customChips.length === 0) { container.innerHTML = ''; return; }
+            container.innerHTML = customChips.map((chip, i) => `
+                <div class="custom-chip" onclick="spinCustomChip('${chip}')">
+                    ${chip} <span class="del-btn" onclick="deleteCustomChip(${i}, event)">&times;</span>
+                </div>
+            `).join('');
+        }
+        function saveCustomTag() {
+            const tag = document.getElementById('tagInput').value.trim();
+            if (tag && !customChips.includes(tag)) {
+                customChips.push(tag);
+                localStorage.setItem('roulette_custom_chips', JSON.stringify(customChips));
+                renderCustomChips();
+            }
+        }
+        function deleteCustomChip(index, event) {
+            event.stopPropagation(); // Prevents the chip from spinning when you click delete
+            customChips.splice(index, 1);
+            localStorage.setItem('roulette_custom_chips', JSON.stringify(customChips));
+            renderCustomChips();
+        }
+        function spinCustomChip(tag) {
+            document.getElementById('tagInput').value = tag;
+            fetchAndSpin();
+        }
+
+        // --- EXPORT & IMPORT DATA ---
+        function exportData() {
+            const backup = {
+                favorites: savedFavorites,
+                history: watchHistory,
+                blacklist: bannedTags,
+                customChips: customChips,
+                theme: localStorage.getItem('roulette_theme') || 'default'
+            };
+            
+            // Convert to JSON string and create a downloadable blob
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup));
+            const downloadLink = document.createElement('a');
+            downloadLink.setAttribute("href", dataStr);
+            downloadLink.setAttribute("download", "roulette_backup.json");
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            downloadLink.remove();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // Validate and apply
+                    if (importedData.favorites) localStorage.setItem('roulette_favorites', JSON.stringify(importedData.favorites));
+                    if (importedData.history) localStorage.setItem('roulette_history', JSON.stringify(importedData.history));
+                    if (importedData.blacklist) localStorage.setItem('roulette_blacklist', JSON.stringify(importedData.blacklist));
+                    if (importedData.customChips) localStorage.setItem('roulette_custom_chips', JSON.stringify(importedData.customChips));
+                    if (importedData.theme) localStorage.setItem('roulette_theme', importedData.theme);
+
+                    alert("✅ Data successfully imported! The page will now refresh to apply your settings.");
+                    window.location.reload();
+                } catch (error) {
+                    alert("❌ Error: Invalid backup file format.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
         // --- SHARE SYSTEM ---
         function shareVideo() {
             if (!currentVideo) return;
             const params = new URLSearchParams({ embed: currentVideo.embed, title: currentVideo.title, source: currentVideo.source });
             const shareUrl = window.location.origin + window.location.pathname + '?' + params.toString();
-            navigator.clipboard.writeText(shareUrl).then(() => alert("🔗 Link copied to clipboard! Anyone who opens it will see this exact video."));
+            navigator.clipboard.writeText(shareUrl).then(() => alert("🔗 Link copied to clipboard!"));
         }
 
         // --- MODAL & LIST LOGIC ---
@@ -340,7 +422,7 @@
             return parts.length === 3 ? (parts[0]*3600 + parts[1]*60 + parts[2]) : (parts[0]*60 + parts[1]);
         }
 
-        async function getEPorner(tag) { try { const r = await fetch(`https://www.eporner.com/api/v2/video/search/?query=${encodeURIComponent(tag)}&format=json&per_page=30`); const d = await r.json(); return d.videos ? d.videos.map(v => ({ title: v.title, embed: `https://www.eporner.com/embed/${v.id}/`, source: 'EPorner', durationSec: parseDuration(v.length_sec || v.length_min) })) : []; } catch (e) { return []; } }
+        async function getEPorner(tag) { try { const r = await fetch(`https://www.eporner.com/api/v2/video/search/?query=${encodeURIComponent(tag)}&format=json&per_page=30`); const d = await r.json(); return d.videos ? d.videos.map(v => ({ title: v.title, embed: `https://www.eporner.com/embed/${v.id}/`, source: 'EPorner', tags: d.videos.keywords, durationSec: parseDuration(v.length_sec || v.length_min) })) : []; } catch (e) { return []; } }
         async function getRedTube(tag) { try { const r = await fetch(`https://api.redtube.com/?data=redtube.Videos.searchVideos&search=${encodeURIComponent(tag)}&output=json`); const d = await r.json(); return d.videos ? d.videos.map(v => ({ title: v.video.title, embed: v.video.embed_url, source: 'RedTube', durationSec: parseDuration(v.video.duration) })) : []; } catch (e) { return []; } }
         async function getPornhub(tag) { try { const r = await fetch(`https://www.pornhub.com/webmasters/search?search=${encodeURIComponent(tag)}`); const d = await r.json(); return d.videos ? d.videos.map(v => ({ title: v.title, embed: v.embed || `https://www.pornhub.com/embed/${v.video_id}`, source: 'Pornhub', durationSec: parseDuration(v.duration) })) : []; } catch (e) { return []; } }
 
@@ -364,6 +446,13 @@
             const results = await Promise.all([ getEPorner(tag), getRedTube(tag), getPornhub(tag) ]);
             let combined = results.flat();
 
+            if (bannedTags.length > 0) {
+                combined = combined.filter(v => {
+                    if (!v.tags) return true;
+                    return !bannedTags.some(ban => (v.tags.toLowerCase() || "").includes(ban));
+                });
+            }
+
             if (dur !== 'any') {
                 combined = combined.filter(v => {
                     if (v.durationSec === 0) return false; 
@@ -384,6 +473,7 @@
         // --- BOOTSTRAP ---
         window.onload = () => { 
             initTheme();
+            renderCustomChips(); // Load user's saved chips
             const params = new URLSearchParams(window.location.search);
             if (params.has('embed')) {
                 currentVideo = { embed: params.get('embed'), title: params.get('title') || 'Shared Video', source: params.get('source') || 'Unknown', durationSec: 0 };
