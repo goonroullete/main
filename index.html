@@ -1,562 +1,387 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JAV Roulette & Community Vault</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#fdf2f8',
-                            100: '#fce7f3',
-                            500: '#ec4899',
-                            600: '#db2777',
-                            700: '#be185d',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- FontAwesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Roulette Aggregator Pro</title>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; }
+        body { font-family: system-ui, sans-serif; background-color: #0f0f13; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        
+        /* Header & Nav */
+        .header-container { width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;}
+        h1 { margin: 0; font-size: 1.8rem; }
+        .header-buttons { display: flex; gap: 10px; }
+        .menu-btn { background: #2a2a3a; color: #aaa; border: 1px solid #444; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: bold; }
+        .menu-btn:hover { background: #e91e63; color: white; border-color: #e91e63; }
+        .menu-btn.fav { background: #3a2a00; color: #ffd700; border-color: #ffd700; }
+        .menu-btn.fav:hover { background: #ffd700; color: black; }
+
+        /* Navigation Tabs */
+        .tabs { display: flex; gap: 15px; margin-bottom: 20px; background: #1a1a24; padding: 10px; border-radius: 12px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 800px; box-sizing: border-box; }
+        .tab { padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        .tab.active { background: #e91e63; color: white; }
+        .tab:hover:not(.active) { background: #2a2a3a; }
+
+        /* Controls */
+        .controls { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center;}
+        input, select, button { padding: 10px 16px; font-size: 1rem; border-radius: 6px; border: 1px solid #333; background: #1e1e1e; color: white; }
+        input { width: 200px; }
+        select { cursor: pointer; background: #2a2a3a; }
+        button.spin-btn { background-color: #e91e63; border: none; cursor: pointer; font-weight: bold; }
+        button.spin-btn:hover { background-color: #d81b60; }
+        
+        /* Video Player */
+        .video-container { width: 100%; max-width: 800px; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.6); margin-bottom: 15px; }
+        iframe { width: 100%; height: 100%; border: none; }
+        
+        /* Video Details */
+        .video-header { display: flex; justify-content: center; align-items: center; gap: 15px; max-width: 800px; margin-bottom: 5px; width: 100%; }
+        #videoTitle { font-size: 1.1rem; text-align: center; font-weight: bold; }
+        .fav-star { font-size: 1.5rem; cursor: pointer; color: #555; transition: transform 0.2s; user-select: none; }
+        .fav-star:hover { transform: scale(1.2); }
+        .fav-star.active { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+        
+        #videoSource { font-size: 0.9rem; color: #888; margin-bottom: 15px; text-align: center; }
+        
+        /* Tags */
+        .video-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 800px; margin-bottom: 20px; }
+        .vid-tag-chip { background: #333; border: 1px solid #555; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .vid-tag-chip:hover { background: #d32f2f; border-color: #ff5252; }
+        .vid-tag-chip:hover::after { content: " (Ban)"; }
+
+        /* Modals */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 100; padding: 20px; box-sizing: border-box;}
+        .modal-content { background: #1e1e24; padding: 25px; border-radius: 12px; width: 100%; max-width: 600px; border: 1px solid #333; max-height: 80vh; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .modal-header h2 { margin: 0; font-size: 1.4rem; }
+        .close-btn { background: none; border: none; color: #aaa; font-size: 1.5rem; cursor: pointer; }
+        .close-btn:hover { color: white; }
+        
+        .blacklist-grid { display: flex; gap: 8px; flex-wrap: wrap; overflow-y: auto; }
+        .blacklisted-chip { background: #4a0000; border: 1px solid #ff5252; color: #ffcccc; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; }
+        .blacklisted-chip:hover { background: #1a1a24; border-color: #444; color: #aaa; text-decoration: line-through; }
+        
+        /* Favorites List */
+        .favorites-list { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+        .fav-item { display: flex; justify-content: space-between; align-items: center; background: #2a2a3a; padding: 10px 15px; border-radius: 8px; border: 1px solid #444; }
+        .fav-info { display: flex; flex-direction: column; cursor: pointer; flex-grow: 1; }
+        .fav-title { font-weight: bold; font-size: 0.95rem; margin-bottom: 4px; color: #fff;}
+        .fav-meta { font-size: 0.8rem; color: #aaa; }
+        .fav-info:hover .fav-title { color: #e91e63; }
+        .fav-remove { background: none; border: none; color: #ff5252; cursor: pointer; font-size: 1.2rem; padding: 5px; }
+        .fav-remove:hover { color: #ff0000; transform: scale(1.1); }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-brand-500 selection:text-white">
+<body>
 
-    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <div class="bg-brand-600 text-white p-2 rounded-xl shadow-lg shadow-brand-500/30">
-                    <i class="fa-solid fa-dice text-xl animate-pulse"></i>
-                </div>
-                <div>
-                    <h1 class="font-extrabold text-lg tracking-wide bg-gradient-to-r from-brand-400 to-pink-500 bg-clip-text text-transparent">JAV Roulette</h1>
-                    <p class="text-xs text-slate-400">Community Curated & Voted</p>
-                </div>
-            </div>
-            
-            <div class="flex items-center space-x-3">
-                <div id="authNavArea" class="flex items-center space-x-3">
-                    <!-- Populated dynamically -->
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full">
-        
-        <!-- Navigation Tabs -->
-        <div class="flex border-b border-slate-800 mb-8 space-x-6">
-            <button onclick="switchTab('roulette')" id="tabRoulette" class="pb-3 font-semibold border-b-2 border-brand-500 text-brand-400 transition flex items-center space-x-2">
-                <i class="fa-solid fa-shuffle"></i> <span>Roulette Arena</span>
-            </button>
-            <button onclick="switchTab('leaderboard')" id="tabLeaderboard" class="pb-3 font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
-                <i class="fa-solid fa-fire text-amber-500"></i> <span>Community Vault & Leaderboard</span>
-            </button>
-        </div>
-
-        <!-- TAB 1: ROULETTE ARENA -->
-        <section id="viewRoulette" class="space-y-6">
-            <!-- Controls & Tags -->
-            <div class="bg-slate-900/60 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
-                <div class="flex flex-col md:flex-row gap-3">
-                    <div class="relative flex-grow">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
-                            <i class="fa-solid fa-tag"></i>
-                        </span>
-                        <input type="text" id="tagInput" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-slate-100 focus:outline-none focus:border-brand-500 transition shadow-inner" placeholder="Enter keyword or tag (e.g. japanese, uncensored)..." value="jav">
-                    </div>
-                    <button onclick="spinRoulette()" class="bg-gradient-to-r from-brand-600 to-pink-600 hover:from-brand-500 hover:to-pink-500 text-white font-bold px-8 py-3 rounded-xl shadow-lg shadow-brand-600/30 transition transform active:scale-95 flex items-center justify-center space-x-2">
-                        <i class="fa-solid fa-dice text-lg"></i>
-                        <span>SPIN NEXT 🎰</span>
-                    </button>
-                </div>
-
-                <!-- Quick Filter Chips -->
-                <div class="flex flex-wrap gap-2 pt-1 items-center">
-                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1">Quick Tags:</span>
-                    <button onclick="setTagAndSpin('jav')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition">#jav</button>
-                    <button onclick="setTagAndSpin('japanese uncensored')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition">#uncensored</button>
-                    <button onclick="setTagAndSpin('asian amateur')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition">#amateur</button>
-                    <button onclick="setTagAndSpin('idol')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition">#idol</button>
-                    <button onclick="setTagAndSpin('school girl')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition">#school</button>
-                </div>
-            </div>
-
-            <!-- Video Player & Details Card -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Video Frame Column -->
-                <div class="lg:col-span-2 space-y-4">
-                    <div class="relative w-full aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center">
-                        <iframe id="videoPlayer" class="w-full h-full border-0 absolute inset-0" src="" allowfullscreen></iframe>
-                        <div id="videoLoader" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center space-y-3 z-10 transition opacity-0 pointer-events-none">
-                            <i class="fa-solid fa-spinner fa-spin text-brand-500 text-3xl"></i>
-                            <p class="text-sm font-medium text-slate-300">Searching random archives...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Metadata & Voting Column -->
-                <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-xl">
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-start">
-                            <span id="videoQualityTag" class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs px-2.5 py-1 rounded-md font-semibold">HD Quality</span>
-                            <span id="videoDuration" class="text-xs text-slate-400 font-mono flex items-center space-x-1">
-                                <i class="fa-regular fa-clock"></i> <span id="durationText">--:--</span>
-                            </span>
-                        </div>
-                        
-                        <h2 id="videoTitleText" class="text-lg font-bold text-slate-100 leading-snug">Welcome to JAV Roulette! Hit spin to begin.</h2>
-                        
-                        <div class="text-xs text-slate-400 flex items-center space-x-4 pt-2 border-t border-slate-800/80">
-                            <span><i class="fa-solid fa-eye text-slate-500 mr-1"></i> Views: <span id="videoViews">0</span></span>
-                            <span><i class="fa-solid fa-hashtag text-slate-500 mr-1"></i> Tag: <span id="currentActiveTag" class="text-brand-400 font-medium">jav</span></span>
-                        </div>
-                    </div>
-
-                    <!-- Voting Bar -->
-                    <div class="pt-6 mt-6 border-t border-slate-800 flex items-center justify-between">
-                        <div class="text-sm font-semibold text-slate-300 flex items-center space-x-2">
-                            <span>Community Rating:</span>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <button onclick="voteCurrentVideo('like')" id="likeBtn" class="flex items-center space-x-1.5 bg-slate-800 hover:bg-emerald-600/20 hover:text-emerald-400 border border-slate-700 px-4 py-2 rounded-xl text-sm font-semibold transition">
-                                <i class="fa-solid fa-thumbs-up"></i>
-                                <span id="likeCount">0</span>
-                            </button>
-                            <button onclick="voteCurrentVideo('dislike')" id="dislikeBtn" class="flex items-center space-x-1.5 bg-slate-800 hover:bg-rose-600/20 hover:text-rose-400 border border-slate-700 px-4 py-2 rounded-xl text-sm font-semibold transition">
-                                <i class="fa-solid fa-thumbs-down"></i>
-                                <span id="dislikeCount">0</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 2: COMMUNITY LEADERBOARD & VAULT -->
-        <section id="viewLeaderboard" class="hidden space-y-6">
-            <div class="bg-slate-900/60 p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h2 class="text-xl font-bold flex items-center space-x-2">
-                        <i class="fa-solid fa-trophy text-amber-400"></i>
-                        <span>Top Community Liked Videos</span>
-                    </h2>
-                    <p class="text-sm text-slate-400 mt-1">Videos discovered and upvoted by users across the roulette session.</p>
-                </div>
-                <button onclick="loadLeaderboard()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-sm font-semibold border border-slate-700 transition flex items-center space-x-2">
-                    <i class="fa-solid fa-rotate-right"></i>
-                    <span>Refresh Vault</span>
-                </button>
-            </div>
-
-            <!-- Leaderboard Table/Grid -->
-            <div id="leaderboardContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Populated dynamically -->
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Auth Modal -->
-    <div id="authModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
-            <button onclick="toggleAuthModal(false)" class="absolute top-4 right-4 text-slate-400 hover:text-white">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-            
-            <div class="text-center mb-6">
-                <div class="inline-block bg-brand-600/20 text-brand-400 p-3 rounded-2xl mb-2">
-                    <i class="fa-solid fa-user-lock text-2xl"></i>
-                </div>
-                <h3 id="authModalTitle" class="text-xl font-bold">Sign In to JAV Roulette</h3>
-                <p class="text-xs text-slate-400 mt-1">Create an account to vote on videos and save your profile.</p>
-            </div>
-
-            <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Username</label>
-                    <input type="text" id="authUsername" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-brand-500" placeholder="e.g. OtakuMaster">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Password</label>
-                    <input type="password" id="authPassword" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-brand-500" placeholder="••••••••">
-                </div>
-                <button type="submit" id="authSubmitBtn" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-xl shadow-lg transition">Sign In</button>
-            </form>
-
-            <div class="text-center mt-4">
-                <button onclick="switchAuthMode()" id="authSwitchModeBtn" class="text-xs text-brand-400 hover:underline">Need an account? Sign Up</button>
-            </div>
+    <div class="header-container">
+        <h1>🎲 Multi-Site Roulette</h1>
+        <div class="header-buttons">
+            <button class="menu-btn fav" onclick="openModal('favoritesModal')">⭐ Favorites</button>
+            <button class="menu-btn" onclick="openModal('blacklistModal')">🚫 Blacklist</button>
         </div>
     </div>
 
-    <!-- Notification Toast -->
-    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-slate-800 text-slate-100 px-4 py-3 rounded-xl shadow-2xl z-50 transform translate-y-20 opacity-0 transition duration-300 flex items-center space-x-3">
-        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
-        <span id="toastMessage" class="text-sm font-medium">Notification message</span>
+    <!-- Categories -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchCategory('jav', this)">JAV</div>
+        <div class="tab" onclick="switchCategory('hentai', this)">Animations</div>
+        <div class="tab" onclick="switchCategory('homemade amateur', this)">Homemade Amateur</div>
+    </div>
+
+    <!-- Search & Controls -->
+    <div class="controls">
+        <input type="text" id="tagInput" placeholder="Enter search tag..." value="jav">
+        <select id="durationSelect">
+            <option value="any">Any Length</option>
+            <option value="short">Short (Under 5m)</option>
+            <option value="normal">Normal (5m - 30m)</option>
+            <option value="long">Long (30m+)</option>
+        </select>
+        <button class="spin-btn" onclick="fetchAndSpin()">SPIN 🎰</button>
+    </div>
+
+    <div class="video-container">
+        <iframe id="player" src="" allowfullscreen></iframe>
+    </div>
+    
+    <div class="video-header">
+        <div id="videoTitle">Loading...</div>
+        <div class="fav-star" id="starBtn" onclick="toggleFavorite()" title="Save to Favorites">☆</div>
+    </div>
+    <div id="videoSource"></div>
+    <div class="video-tags" id="videoTagsContainer"></div>
+
+    <!-- Blacklist Modal -->
+    <div id="blacklistModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Banned Tags</h2>
+                <button class="close-btn" onclick="closeModal('blacklistModal')">&times;</button>
+            </div>
+            <p style="font-size: 0.9rem; color: #888; margin-bottom: 15px;">Click a tag to remove it from the blacklist.</p>
+            <div class="blacklist-grid" id="blacklistGrid"></div>
+        </div>
+    </div>
+
+    <!-- Favorites Modal -->
+    <div id="favoritesModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⭐ Saved Videos</h2>
+                <button class="close-btn" onclick="closeModal('favoritesModal')">&times;</button>
+            </div>
+            
+            <!-- NEW WARNING MESSAGE HERE -->
+            <div style="background: #2a2a3a; border-left: 4px solid #e91e63; padding: 10px 15px; border-radius: 4px; font-size: 0.85rem; color: #ccc; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                <span>⚠️</span>
+                <span><strong>Note:</strong> Favorites are saved locally to this device's browser. They will not sync if you open this site on a different phone or computer.</span>
+            </div>
+
+            <div class="favorites-list" id="favoritesList"></div>
+        </div>
     </div>
 
     <script>
-        // State Management
-        let currentUser = null;
-        let activeTab = 'roulette';
-        let isSignUpMode = false;
-        let currentVideo = null; // Stores { id, title, url, embed, duration, views, tags }
-        let communityDatabase = {}; // Key: videoId, Value: { id, title, embed, duration, views, likes: 0, dislikes: 0, voters: {} }
+        // --- GLOBAL STATE ---
+        let currentVideo = null; 
 
-        // Initialize Local Storage Mock Data
-        function initStorage() {
-            const savedUser = localStorage.getItem('jav_current_user');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-            }
-            const savedDb = localStorage.getItem('jav_community_db');
-            if (savedDb) {
-                communityDatabase = JSON.parse(savedDb);
-            }
-            renderAuthNav();
+        // --- DATABASES (LocalStorage) ---
+        let bannedTags = JSON.parse(localStorage.getItem('roulette_blacklist')) || [];
+        let savedFavorites = JSON.parse(localStorage.getItem('roulette_favorites')) || [];
+
+        // --- MODAL LOGIC ---
+        function openModal(id) { 
+            document.getElementById(id).style.display = 'flex'; 
+            if(id === 'blacklistModal') renderBlacklistModal();
+            if(id === 'favoritesModal') renderFavoritesModal();
         }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        // Navigation Tab Switching
-        function switchTab(tab) {
-            activeTab = tab;
-            if (tab === 'roulette') {
-                document.getElementById('viewRoulette').classList.remove('hidden');
-                document.getElementById('viewLeaderboard').classList.add('hidden');
-                document.getElementById('tabRoulette').className = "pb-3 font-semibold border-b-2 border-brand-500 text-brand-400 transition flex items-center space-x-2";
-                document.getElementById('tabLeaderboard').className = "pb-3 font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition flex items-center space-x-2";
-            } else {
-                document.getElementById('viewRoulette').classList.add('hidden');
-                document.getElementById('viewLeaderboard').classList.remove('hidden');
-                document.getElementById('tabLeaderboard').className = "pb-3 font-semibold border-b-2 border-brand-500 text-brand-400 transition flex items-center space-x-2";
-                document.getElementById('tabRoulette').className = "pb-3 font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition flex items-center space-x-2";
-                loadLeaderboard();
+        // --- BLACKLIST SYSTEM ---
+        function saveBlacklist() { localStorage.setItem('roulette_blacklist', JSON.stringify(bannedTags)); renderBlacklistModal(); }
+        function banTag(tag) {
+            const cleanTag = tag.toLowerCase().trim();
+            if (!bannedTags.includes(cleanTag)) {
+                bannedTags.push(cleanTag);
+                saveBlacklist();
+                fetchAndSpin(); 
             }
         }
-
-        // Render Auth Header
-        function renderAuthNav() {
-            const container = document.getElementById('authNavArea');
-            if (currentUser) {
-                container.innerHTML = `
-                    <div class="flex items-center space-x-3 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl">
-                        <div class="w-8 h-8 rounded-full bg-brand-600/20 text-brand-400 flex items-center justify-center font-bold text-sm border border-brand-500/30">
-                            ${currentUser.username.charAt(0).toUpperCase()}
-                        </div>
-                        <span class="text-sm font-semibold text-slate-200">${currentUser.username}</span>
-                    </div>
-                    <button onclick="handleLogout()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition">
-                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                    </button>
-                `;
-            } else {
-                container.innerHTML = `
-                    <button onclick="toggleAuthModal(true, false)" class="text-slate-300 hover:text-white text-sm font-semibold px-4 py-2 transition">Sign In</button>
-                    <button onclick="toggleAuthModal(true, true)" class="bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-md transition">Sign Up</button>
-                `;
-            }
+        function unbanTag(tag) { bannedTags = bannedTags.filter(t => t !== tag); saveBlacklist(); }
+        function renderBlacklistModal() {
+            const grid = document.getElementById('blacklistGrid');
+            if (bannedTags.length === 0) { grid.innerHTML = "<span style='color: #666;'>No tags blacklisted yet.</span>"; return; }
+            grid.innerHTML = bannedTags.map(tag => `<div class="blacklisted-chip" onclick="unbanTag('${tag}')">${tag} &times;</div>`).join('');
         }
 
-        // Auth Modal Controls
-        function toggleAuthModal(show, signUp = false) {
-            isSignUpMode = signUp;
-            const modal = document.getElementById('authModal');
-            const title = document.getElementById('authModalTitle');
-            const btn = document.getElementById('authSubmitBtn');
-            const switchBtn = document.getElementById('authSwitchModeBtn');
-
-            if (show) {
-                modal.classList.remove('hidden');
-                if (isSignUpMode) {
-                    title.innerText = "Create JAV Vault Account";
-                    btn.innerText = "Sign Up";
-                    switchBtn.innerText = "Already have an account? Sign In";
-                } else {
-                    title.innerText = "Sign In to JAV Roulette";
-                    btn.innerText = "Sign In";
-                    switchBtn.innerText = "Need an account? Sign Up";
-                }
-            } else {
-                modal.classList.add('hidden');
-            }
-        }
-
-        function switchAuthMode() {
-            isSignUpMode = !isSignUpMode;
-            toggleAuthModal(true, isSignUpMode);
-        }
-
-        function handleAuthSubmit(e) {
-            e.preventDefault();
-            const username = document.getElementById('authUsername').value.trim();
-            const pass = document.getElementById('authPassword').value;
-
-            if (!username || !pass) return;
-
-            let users = JSON.parse(localStorage.getItem('jav_users_db') || '{}');
-
-            if (isSignUpMode) {
-                if (users[username]) {
-                    showToast("Username already exists!", "error");
-                    return;
-                }
-                users[username] = pass;
-                localStorage.setItem('jav_users_db', JSON.stringify(users));
-                currentUser = { username };
-                showToast("Account created successfully!", "success");
-            } else {
-                if (!users[username] || users[username] !== pass) {
-                    showToast("Invalid username or password!", "error");
-                    return;
-                }
-                currentUser = { username };
-                showToast("Signed in successfully!", "success");
-            }
-
-            localStorage.setItem('jav_current_user', JSON.stringify(currentUser));
-            toggleAuthModal(false);
-            renderAuthNav();
-            // Refresh current video voting UI if loaded
-            if (currentVideo) updateVotingUI();
-        }
-
-        function handleLogout() {
-            currentUser = null;
-            localStorage.removeItem('jav_current_user');
-            renderAuthNav();
-            showToast("Logged out successfully.", "info");
-            if (currentVideo) updateVotingUI();
-        }
-
-        // Toast Notification System
-        function showToast(message, type = "success") {
-            const toast = document.getElementById('toast');
-            const msg = document.getElementById('toastMessage');
-            const icon = document.getElementById('toastIcon');
-
-            msg.innerText = message;
-            if (type === "error") {
-                icon.className = "fa-solid fa-circle-exclamation text-rose-400";
-            } else {
-                icon.className = "fa-solid fa-circle-check text-emerald-400";
-            }
-
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
-        }
-
-        // Roulette Actions
-        function setTagAndSpin(tag) {
-            document.getElementById('tagInput').value = tag;
-            spinRoulette();
-        }
-
-        async function spinRoulette() {
-            const tag = document.getElementById('tagInput').value.trim() || 'jav';
-            document.getElementById('currentActiveTag').innerText = tag;
-            const loader = document.getElementById('videoLoader');
-            loader.classList.remove('opacity-0', 'pointer-events-none');
-
-            const apiUrl = `https://www.eporner.com/api/v2/video/search/?query=${encodeURIComponent(tag)}&format=json&per_page=50`;
-
-            try {
-                const response = await fetch(apiUrl);
-                const data = await response.json();
-
-                if (!data.videos || data.videos.length === 0) {
-                    showToast("No videos found for this tag!", "error");
-                    loader.classList.add('opacity-0', 'pointer-events-none');
-                    return;
-                }
-
-                const randomIndex = Math.floor(Math.random() * data.videos.length);
-                const v = data.videos[randomIndex];
-
-                currentVideo = {
-                    id: v.id,
-                    title: v.title,
-                    url: v.url,
-                    embed: `https://www.eporner.com/embed/${v.id}/`,
-                    duration: v.length_min || "10:00",
-                    views: v.views || Math.floor(Math.random() * 50000) + 1000,
-                };
-
-                // Register in community db if not present
-                if (!communityDatabase[currentVideo.id]) {
-                    communityDatabase[currentVideo.id] = {
-                        id: currentVideo.id,
-                        title: currentVideo.title,
-                        embed: currentVideo.embed,
-                        duration: currentVideo.duration,
-                        views: currentVideo.views,
-                        likes: 0,
-                        dislikes: 0,
-                        voters: {} // username -> 'like' | 'dislike'
-                    };
-                }
-
-                // Render video details
-                document.getElementById('videoPlayer').src = currentVideo.embed;
-                document.getElementById('videoTitleText').innerText = currentVideo.title;
-                document.getElementById('durationText').innerText = currentVideo.duration;
-                document.getElementById('videoViews').innerText = currentVideo.views.toLocaleString();
-
-                updateVotingUI();
-
-            } catch (err) {
-                console.error("API Error:", err);
-                showToast("Failed to fetch videos from server.", "error");
-            } finally {
-                setTimeout(() => {
-                    loader.classList.add('opacity-0', 'pointer-events-none');
-                }, 400);
-            }
-        }
-
-        // Voting System
-        function voteCurrentVideo(type) {
-            if (!currentUser) {
-                toggleAuthModal(true, false);
-                showToast("Please sign in to vote on videos.", "error");
-                return;
-            }
+        // --- FAVORITES SYSTEM ---
+        function saveFavoritesDB() { localStorage.setItem('roulette_favorites', JSON.stringify(savedFavorites)); }
+        
+        function toggleFavorite() {
             if (!currentVideo) return;
-
-            const entry = communityDatabase[currentVideo.id];
-            const currentVote = entry.voters[currentUser.username];
-
-            if (currentVote === type) {
-                // Toggle off vote
-                if (type === 'like') entry.likes--;
-                if (type === 'dislike') entry.dislikes--;
-                delete entry.voters[currentUser.username];
-                showToast("Vote removed.", "info");
-            } else {
-                if (currentVote === 'like') entry.likes--;
-                if (currentVote === 'dislike') entry.dislikes--;
-
-                if (type === 'like') {
-                    entry.likes++;
-                    showToast("Added to community likes!", "success");
-                }
-                if (type === 'dislike') {
-                    entry.dislikes++;
-                    showToast("Recorded feedback.", "info");
-                }
-                entry.voters[currentUser.username] = type;
-            }
-
-            localStorage.setItem('jav_community_db', JSON.stringify(communityDatabase));
-            updateVotingUI();
-        }
-
-        function updateVotingUI() {
-            if (!currentVideo) return;
-            const entry = communityDatabase[currentVideo.id];
+            const existsIndex = savedFavorites.findIndex(v => v.embed === currentVideo.embed);
             
-            document.getElementById('likeCount').innerText = entry.likes;
-            document.getElementById('dislikeCount').innerText = entry.dislikes;
-
-            const likeBtn = document.getElementById('likeBtn');
-            const dislikeBtn = document.getElementById('dislikeBtn');
-
-            const userVote = currentUser ? entry.voters[currentUser.username] : null;
-
-            if (userVote === 'like') {
-                likeBtn.className = "flex items-center space-x-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-500/50 px-4 py-2 rounded-xl text-sm font-semibold transition shadow-lg shadow-emerald-500/10";
+            if (existsIndex > -1) {
+                // Remove it
+                savedFavorites.splice(existsIndex, 1);
             } else {
-                likeBtn.className = "flex items-center space-x-1.5 bg-slate-800 hover:bg-emerald-600/20 hover:text-emerald-400 border border-slate-700 px-4 py-2 rounded-xl text-sm font-semibold transition";
+                // Add it
+                savedFavorites.push(currentVideo);
             }
+            saveFavoritesDB();
+            updateStarUI();
+            renderFavoritesModal();
+        }
 
-            if (userVote === 'dislike') {
-                dislikeBtn.className = "flex items-center space-x-1.5 bg-rose-600/20 text-rose-400 border border-rose-500/50 px-4 py-2 rounded-xl text-sm font-semibold transition shadow-lg shadow-rose-500/10";
+        function updateStarUI() {
+            if (!currentVideo) return;
+            const star = document.getElementById('starBtn');
+            const isFav = savedFavorites.some(v => v.embed === currentVideo.embed);
+            if (isFav) {
+                star.innerHTML = "★";
+                star.classList.add('active');
             } else {
-                dislikeBtn.className = "flex items-center space-x-1.5 bg-slate-800 hover:bg-rose-600/20 hover:text-rose-400 border border-slate-700 px-4 py-2 rounded-xl text-sm font-semibold transition";
+                star.innerHTML = "☆";
+                star.classList.remove('active');
             }
         }
 
-        // Leaderboard Render
-        function loadLeaderboard() {
-            const container = document.getElementById('leaderboardContainer');
-            const videos = Object.values(communityDatabase).sort((a, b) => b.likes - a.likes);
+        function removeFavorite(embedUrl, event) {
+            event.stopPropagation(); // Prevents the video from playing when you click the trash can
+            savedFavorites = savedFavorites.filter(v => v.embed !== embedUrl);
+            saveFavoritesDB();
+            updateStarUI();
+            renderFavoritesModal();
+        }
 
-            if (videos.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full py-16 text-center text-slate-500">
-                        <i class="fa-solid fa-folder-open text-4xl mb-3"></i>
-                        <p>No community votes recorded yet. Spin the roulette and start upvoting videos!</p>
-                    </div>
-                `;
-                return;
+        function playFavorite(index) {
+            currentVideo = savedFavorites[index];
+            loadVideoIntoPlayer();
+            closeModal('favoritesModal');
+        }
+
+        function renderFavoritesModal() {
+            const list = document.getElementById('favoritesList');
+            if (savedFavorites.length === 0) { 
+                list.innerHTML = "<span style='color: #666; text-align:center; padding: 20px;'>No videos saved yet. Click the ☆ to save one!</span>"; 
+                return; 
             }
-
-            container.innerHTML = videos.map((v, index) => `
-                <div class="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex flex-col justify-between">
-                    <div class="relative aspect-video bg-slate-950">
-                        <iframe src="${v.embed}" class="w-full h-full border-0 pointer-events-none"></iframe>
-                        <div class="absolute top-3 left-3 bg-slate-950/80 backdrop-blur border border-slate-800 text-xs px-2.5 py-1 rounded-lg font-bold flex items-center space-x-1.5 text-amber-400 shadow-md">
-                            <i class="fa-solid fa-medal"></i> <span>Rank #${index + 1}</span>
-                        </div>
+            list.innerHTML = savedFavorites.map((vid, index) => `
+                <div class="fav-item">
+                    <div class="fav-info" onclick="playFavorite(${index})">
+                        <div class="fav-title">${vid.title}</div>
+                        <div class="fav-meta">${vid.source} • ${formatSecondsToMMSS(vid.durationSec)}</div>
                     </div>
-                    <div class="p-5 space-y-3 flex flex-col justify-between flex-grow">
-                        <div>
-                            <h3 class="font-bold text-sm text-slate-100 line-clamp-2">${v.title}</h3>
-                        </div>
-                        <div class="flex items-center justify-between pt-3 border-t border-slate-800/80 text-xs">
-                            <div class="flex items-center space-x-3">
-                                <span class="text-emerald-400 font-semibold flex items-center space-x-1">
-                                    <i class="fa-solid fa-thumbs-up"></i> <span>${v.likes}</span>
-                                </span>
-                                <span class="text-rose-400 font-semibold flex items-center space-x-1">
-                                    <i class="fa-solid fa-thumbs-down"></i> <span>${v.dislikes}</span>
-                                </span>
-                            </div>
-                            <button onclick="playVaultVideo('${v.id}')" class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg font-semibold transition">
-                                <i class="fa-solid fa-play mr-1"></i> Watch
-                            </button>
-                        </div>
-                    </div>
+                    <button class="fav-remove" onclick="removeFavorite('${vid.embed}', event)" title="Remove">🗑️</button>
                 </div>
             `).join('');
         }
 
-        function playVaultVideo(id) {
-            const v = communityDatabase[id];
-            if (!v) return;
-            currentVideo = {
-                id: v.id,
-                title: v.title,
-                url: "#",
-                embed: v.embed,
-                duration: v.duration,
-                views: v.views
-            };
-            switchTab('roulette');
-            document.getElementById('videoPlayer').src = currentVideo.embed;
-            document.getElementById('videoTitleText').innerText = currentVideo.title;
-            document.getElementById('durationText').innerText = currentVideo.duration;
-            document.getElementById('videoViews').innerText = currentVideo.views.toLocaleString();
-            updateVotingUI();
+        // --- UTILITIES ---
+        function extractTags(vidObj, apiType) {
+            let tags = [];
+            try {
+                if (apiType === 'EPorner' && vidObj.keywords) tags = vidObj.keywords.split(',').map(t => t.trim());
+                else if (vidObj.tags) tags = vidObj.tags.map(t => t.tag_name || t.name || t).filter(Boolean);
+            } catch(e) {}
+            return tags.map(t => t.toLowerCase());
+        }
+        function parseDurationToSeconds(val) {
+            if (!val) return 0;
+            if (typeof val === 'number') return val;
+            if (!isNaN(val)) return parseInt(val, 10);
+            const parts = val.toString().split(':').map(Number);
+            if (parts.length === 3) return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+            if (parts.length === 2) return (parts[0] * 60) + parts[1];
+            return 0;
+        }
+        function formatSecondsToMMSS(seconds) {
+            if (seconds === 0) return "Unknown";
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            return `${m}:${s.toString().padStart(2, '0')}`;
         }
 
-        // Initialize on Load
-        window.onload = () => {
-            initStorage();
-            spinRoulette();
-        };
-    </script>
+        /* --- API FETCHERS --- */
+        async function getEPorner(tag) {
+            try {
+                const res = await fetch(`https://www.eporner.com/api/v2/video/search/?query=${encodeURIComponent(tag)}&format=json&per_page=30`);
+                const data = await res.json();
+                return data.videos ? data.videos.map(v => ({ title: v.title, embed: `https://www.eporner.com/embed/${v.id}/`, source: 'EPorner', tags: extractTags(v, 'EPorner'), durationSec: parseDurationToSeconds(v.length_sec || v.length_min) })) : [];
+            } catch (e) { return []; }
+        }
+        async function getRedTube(tag) {
+            try {
+                const res = await fetch(`https://api.redtube.com/?data=redtube.Videos.searchVideos&search=${encodeURIComponent(tag)}&output=json`);
+                const data = await res.json();
+                return data.videos ? data.videos.map(v => ({ title: v.video.title, embed: v.video.embed_url, source: 'RedTube', tags: extractTags(v.video, 'RedTube'), durationSec: parseDurationToSeconds(v.video.duration) })) : [];
+            } catch (e) { return []; }
+        }
+        async function getPornhub(tag) {
+            try {
+                const res = await fetch(`https://www.pornhub.com/webmasters/search?search=${encodeURIComponent(tag)}`);
+                const data = await res.json();
+                return data.videos ? data.videos.map(v => ({ title: v.title, embed: v.embed || `https://www.pornhub.com/embed/${v.video_id}`, source: 'Pornhub', tags: extractTags(v, 'Pornhub'), durationSec: parseDurationToSeconds(v.duration) })) : [];
+            } catch (e) { return []; }
+        }
+        async function getYouPorn(tag) {
+            try {
+                const res = await fetch(`https://www.youporn.com/api/webmasters/search?search=${encodeURIComponent(tag)}`);
+                const data = await res.json();
+                const vids = data.videos || data.video;
+                return vids ? vids.map(v => ({ title: v.title, embed: v.embed, source: 'YouPorn', tags: extractTags(v, 'YouPorn'), durationSec: parseDurationToSeconds(v.duration) })) : [];
+            } catch (e) { return []; }
+        }
+        async function getTube8(tag) {
+            try {
+                const res = await fetch(`https://api.tube8.com/api.php?action=searchVideos&q=${encodeURIComponent(tag)}&output=json`);
+                const data = await res.json();
+                return data.videos ? data.videos.map(v => ({ title: v.video.title, embed: v.video.embed_url, source: 'Tube8', tags: extractTags(v.video, 'Tube8'), durationSec: parseDurationToSeconds(v.video.duration) })) : [];
+            } catch (e) { return []; }
+        }
 
+        // Category Switcher
+        function switchCategory(mainTag, element) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            element.classList.add('active');
+            document.getElementById('tagInput').value = mainTag;
+            fetchAndSpin();
+        }
+
+        /* --- UI UPDATER --- */
+        function loadVideoIntoPlayer() {
+            if (!currentVideo) return;
+            const formattedTime = formatSecondsToMMSS(currentVideo.durationSec);
+            
+            document.getElementById('player').src = currentVideo.embed;
+            document.getElementById('videoTitle').innerText = currentVideo.title;
+            document.getElementById('videoSource').innerText = `Source: ${currentVideo.source} | Duration: ${formattedTime}`;
+            
+            // Render clickable tags
+            if (currentVideo.tags && currentVideo.tags.length > 0) {
+                document.getElementById('videoTagsContainer').innerHTML = currentVideo.tags.map(tag => 
+                    `<div class="vid-tag-chip" onclick="banTag('${tag}')">${tag}</div>`
+                ).join('');
+            } else {
+                document.getElementById('videoTagsContainer').innerHTML = "<span style='color:#666; font-size:0.8rem;'>No tags provided</span>";
+            }
+
+            updateStarUI();
+        }
+
+        /* --- CORE LOGIC --- */
+        async function fetchAndSpin() {
+            const searchTag = document.getElementById('tagInput').value.trim();
+            const durationPref = document.getElementById('durationSelect').value;
+            if (!searchTag) return;
+
+            document.getElementById('videoTitle').innerText = "Scouring APIs & Filtering...";
+            document.getElementById('videoSource').innerText = "";
+            document.getElementById('videoTagsContainer').innerHTML = "";
+            document.getElementById('starBtn').classList.remove('active');
+            document.getElementById('starBtn').innerHTML = "☆";
+
+            const results = await Promise.all([
+                getEPorner(searchTag), getRedTube(searchTag), getPornhub(searchTag), getYouPorn(searchTag), getTube8(searchTag)
+            ]);
+
+            let combinedVideos = results.flat();
+
+            // FILTER 1: Blacklisted Tags
+            if (bannedTags.length > 0) {
+                combinedVideos = combinedVideos.filter(video => {
+                    if (!video.tags || video.tags.length === 0) return true;
+                    return !video.tags.some(t => bannedTags.includes(t));
+                });
+            }
+
+            // FILTER 2: Duration
+            if (durationPref !== 'any') {
+                combinedVideos = combinedVideos.filter(v => {
+                    if (v.durationSec === 0) return false; 
+                    if (durationPref === 'short') return v.durationSec <= 300; 
+                    if (durationPref === 'normal') return v.durationSec > 300 && v.durationSec <= 1800; 
+                    if (durationPref === 'long') return v.durationSec > 1800; 
+                    return true;
+                });
+            }
+
+            if (combinedVideos.length === 0) {
+                document.getElementById('videoTitle').innerText = "No videos found matching your criteria.";
+                return;
+            }
+
+            // Pick a random video & store it globally
+            const randomIndex = Math.floor(Math.random() * combinedVideos.length);
+            currentVideo = combinedVideos[randomIndex];
+
+            loadVideoIntoPlayer();
+        }
+
+        window.onload = () => { fetchAndSpin(); };
+    </script>
 </body>
 </html>
