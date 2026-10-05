@@ -393,9 +393,32 @@
             return tags.map(t => t.toLowerCase());
         }
 
-        async function getEPorner(tag) { try { const r = await fetch(`https://www.eporner.com/api/v2/video/search/?query=${encodeURIComponent(tag)}&format=json&per_page=30`); const d = await r.json(); return d.videos ? d.videos.map(v => ({ title: v.title, embed: `https://www.eporner.com/embed/${v.id}/`, source: 'EPorner', tags: extractTags(v, 'EPorner'), durationSec: parseDuration(v.length_sec || v.length_min) })) : []; } catch (e) { return []; } }
-        async function getRedTube(tag) { try { const r = await fetch(`https://api.redtube.com/?data=redtube.Videos.searchVideos&search=${encodeURIComponent(tag)}&output=json`); const d = await r.json(); return d.videos ? d.videos.map(v => ({ title: v.video.title, embed: v.video.embed_url, source: 'RedTube', tags: extractTags(v.video, 'RedTube'), durationSec: parseDuration(v.video.duration) })) : []; } catch (e) { return []; } }
-        async function getPornhub(tag) { try { const r = await fetch(`https://www.pornhub.com/webmasters/search?search=${encodeURIComponent(tag)}`); const d = await r.json(); return d.videos ? d.videos.map(v => ({ title: v.title, embed: v.embed || `https://www.pornhub.com/embed/${v.video_id}`, source: 'Pornhub', tags: extractTags(v, 'Pornhub'), durationSec: parseDuration(v.duration) })) : []; } catch (e) { return []; } }
+        // 🚀 UPGRADED API FETCHERS: Requesting 100+ results with randomized pages for huge pools!
+        async function getEPorner(tag) { 
+            try { 
+                const randomPage = Math.floor(Math.random() * 5) + 1;
+                const r = await fetch(`https://www.eporner.com/api/v2/video/search/?query=${encodeURIComponent(tag)}&format=json&per_page=100&page=${randomPage}`); 
+                const d = await r.json(); 
+                return d.videos ? d.videos.map(v => ({ title: v.title, embed: `https://www.eporner.com/embed/${v.id}/`, source: 'EPorner', tags: extractTags(v, 'EPorner'), durationSec: parseDuration(v.length_sec || v.length_min) })) : []; 
+            } catch (e) { return []; } 
+        }
+
+        async function getRedTube(tag) { 
+            try { 
+                const r = await fetch(`https://api.redtube.com/?data=redtube.Videos.searchVideos&search=${encodeURIComponent(tag)}&output=json&limit=100`); 
+                const d = await r.json(); 
+                return d.videos ? d.videos.map(v => ({ title: v.video.title, embed: v.video.embed_url, source: 'RedTube', tags: extractTags(v.video, 'RedTube'), durationSec: parseDuration(v.video.duration) })) : []; 
+            } catch (e) { return []; } 
+        }
+
+        async function getPornhub(tag) { 
+            try { 
+                const randomPage = Math.floor(Math.random() * 5) + 1;
+                const r = await fetch(`https://www.pornhub.com/webmasters/search?search=${encodeURIComponent(tag)}&page=${randomPage}`); 
+                const d = await r.json(); 
+                return d.videos ? d.videos.map(v => ({ title: v.title, embed: v.embed || `https://www.pornhub.com/embed/${v.video_id}`, source: 'Pornhub', tags: extractTags(v, 'Pornhub'), durationSec: parseDuration(v.duration) })) : []; 
+            } catch (e) { return []; } 
+        }
 
         /* --- UI UPDATER --- */
         function loadVideoIntoPlayer() {
