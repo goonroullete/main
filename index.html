@@ -6,38 +6,10 @@
     <title>Roulette Aggregator Pro</title>
     <style>
         /* Base / Default Dark Theme */
-        :root {
-            --bg-color: #0f0f13;
-            --surface-color: #1a1a24;
-            --text-color: #e0e0e0;
-            --accent-color: #e91e63;
-            --accent-hover: #d81b60;
-            --border-color: #333;
-        }
-
-        /* Cyberpunk Theme */
-        body.theme-cyberpunk {
-            --bg-color: #09090b;
-            --surface-color: #121212;
-            --text-color: #00f3ff;
-            --accent-color: #fce205;
-            --accent-hover: #bda800;
-            --border-color: #00f3ff;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        body.theme-cyberpunk .spin-btn { color: black; }
-        body.theme-cyberpunk .tab.active { color: black; }
-        body.theme-cyberpunk .wip-badge { background: #ff0055; color: white; }
-
-        /* Retro Synthwave Theme */
-        body.theme-retro {
-            --bg-color: #1a0b2e;
-            --surface-color: #2d1b4e;
-            --text-color: #00ffff;
-            --accent-color: #ff00ff;
-            --accent-hover: #cc00cc;
-            --border-color: #ff00ff;
-        }
+        :root { --bg-color: #0f0f13; --surface-color: #1a1a24; --text-color: #e0e0e0; --accent-color: #e91e63; --accent-hover: #d81b60; --border-color: #333; }
+        body.theme-cyberpunk { --bg-color: #09090b; --surface-color: #121212; --text-color: #00f3ff; --accent-color: #fce205; --accent-hover: #bda800; --border-color: #00f3ff; font-family: 'Courier New', Courier, monospace; }
+        body.theme-cyberpunk .spin-btn { color: black; } body.theme-cyberpunk .tab.active { color: black; } body.theme-cyberpunk .wip-badge { background: #ff0055; color: white; }
+        body.theme-retro { --bg-color: #1a0b2e; --surface-color: #2d1b4e; --text-color: #00ffff; --accent-color: #ff00ff; --accent-hover: #cc00cc; --border-color: #ff00ff; }
         body.theme-retro .wip-badge { background: #00ffff; color: black; }
 
         * { -webkit-tap-highlight-color: transparent; }
@@ -90,8 +62,14 @@
         .icon-btn:hover:not(.disabled-btn) { transform: scale(1.2); color: var(--text-color); }
         .fav-star.active { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
         
-        #videoSource { font-size: 0.9rem; color: #888; margin-bottom: 15px; text-align: center; }
+        #videoSource { font-size: 0.9rem; color: #888; margin-bottom: 10px; text-align: center; }
         
+        /* Tags (Restored!) */
+        .video-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 800px; margin-bottom: 20px; }
+        .vid-tag-chip { background: #333; border: 1px solid #555; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .vid-tag-chip:hover { background: #d32f2f; border-color: #ff5252; }
+        .vid-tag-chip:hover::after { content: " (Ban)"; }
+
         /* Modals */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 100; padding: 20px; box-sizing: border-box;}
         .modal-content { background: var(--bg-color); padding: 25px; border-radius: 12px; width: 100%; max-width: 600px; border: 1px solid var(--border-color); max-height: 80vh; display: flex; flex-direction: column; overflow-y: auto; }
@@ -160,6 +138,8 @@
         </div>
     </div>
     <div id="videoSource"></div>
+    <!-- Restored Tags Container -->
+    <div class="video-tags" id="videoTagsContainer"></div>
 
     <!-- Settings & Data Modal -->
     <div id="settingsModal" class="modal-overlay">
@@ -225,10 +205,6 @@
                 <h3 style="margin: 0 0 5px 0; color: var(--accent-color);">🏆 Voting & Leaderboards</h3>
                 <p style="margin: 0; font-size: 0.9rem; color: #aaa;">A cross-device "Like" system to rank the Top 10 spins of the week.</p>
             </div>
-            <div style="background: var(--surface-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
-                <h3 style="margin: 0 0 5px 0; color: var(--accent-color);">☁️ Cloud Account Sync</h3>
-                <p style="margin: 0; font-size: 0.9rem; color: #aaa;">Log in from your PC or Phone and automatically sync Favorites.</p>
-            </div>
         </div>
     </div>
 
@@ -282,7 +258,7 @@
             }
         }
         function deleteCustomChip(index, event) {
-            event.stopPropagation(); // Prevents the chip from spinning when you click delete
+            event.stopPropagation(); 
             customChips.splice(index, 1);
             localStorage.setItem('roulette_custom_chips', JSON.stringify(customChips));
             renderCustomChips();
@@ -294,47 +270,40 @@
 
         // --- EXPORT & IMPORT DATA ---
         function exportData() {
-            const backup = {
-                favorites: savedFavorites,
-                history: watchHistory,
-                blacklist: bannedTags,
-                customChips: customChips,
-                theme: localStorage.getItem('roulette_theme') || 'default'
-            };
-            
-            // Convert to JSON string and create a downloadable blob
+            const backup = { favorites: savedFavorites, history: watchHistory, blacklist: bannedTags, customChips: customChips, theme: localStorage.getItem('roulette_theme') || 'default' };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup));
             const downloadLink = document.createElement('a');
             downloadLink.setAttribute("href", dataStr);
             downloadLink.setAttribute("download", "roulette_backup.json");
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            downloadLink.remove();
+            document.body.appendChild(downloadLink); downloadLink.click(); downloadLink.remove();
         }
-
         function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     const importedData = JSON.parse(e.target.result);
-                    
-                    // Validate and apply
                     if (importedData.favorites) localStorage.setItem('roulette_favorites', JSON.stringify(importedData.favorites));
                     if (importedData.history) localStorage.setItem('roulette_history', JSON.stringify(importedData.history));
                     if (importedData.blacklist) localStorage.setItem('roulette_blacklist', JSON.stringify(importedData.blacklist));
                     if (importedData.customChips) localStorage.setItem('roulette_custom_chips', JSON.stringify(importedData.customChips));
                     if (importedData.theme) localStorage.setItem('roulette_theme', importedData.theme);
-
-                    alert("✅ Data successfully imported! The page will now refresh to apply your settings.");
+                    alert("✅ Data successfully imported! The page will now refresh.");
                     window.location.reload();
-                } catch (error) {
-                    alert("❌ Error: Invalid backup file format.");
-                }
+                } catch (error) { alert("❌ Error: Invalid backup file format."); }
             };
             reader.readAsText(file);
+        }
+
+        // --- BLACKLIST TAG LOGIC ---
+        function banTag(tag) {
+            const cleanTag = tag.toLowerCase().trim();
+            if (!bannedTags.includes(cleanTag)) {
+                bannedTags.push(cleanTag);
+                localStorage.setItem('roulette_blacklist', JSON.stringify(bannedTags));
+                fetchAndSpin(); // Spin away immediately
+            }
         }
 
         // --- SHARE SYSTEM ---
@@ -422,9 +391,19 @@
             return parts.length === 3 ? (parts[0]*3600 + parts[1]*60 + parts[2]) : (parts[0]*60 + parts[1]);
         }
 
-        async function getEPorner(tag) { try { const r = await fetch(`https://www.eporner.com/api/v2/video/search/?query=${encodeURIComponent(tag)}&format=json&per_page=30`); const d = await r.json(); return d.videos ? d.videos.map(v => ({ title: v.title, embed: `https://www.eporner.com/embed/${v.id}/`, source: 'EPorner', tags: d.videos.keywords, durationSec: parseDuration(v.length_sec || v.length_min) })) : []; } catch (e) { return []; } }
-        async function getRedTube(tag) { try { const r = await fetch(`https://api.redtube.com/?data=redtube.Videos.searchVideos&search=${encodeURIComponent(tag)}&output=json`); const d = await r.json(); return d.videos ? d.videos.map(v => ({ title: v.video.title, embed: v.video.embed_url, source: 'RedTube', durationSec: parseDuration(v.video.duration) })) : []; } catch (e) { return []; } }
-        async function getPornhub(tag) { try { const r = await fetch(`https://www.pornhub.com/webmasters/search?search=${encodeURIComponent(tag)}`); const d = await r.json(); return d.videos ? d.videos.map(v => ({ title: v.title, embed: v.embed || `https://www.pornhub.com/embed/${v.video_id}`, source: 'Pornhub', durationSec: parseDuration(v.duration) })) : []; } catch (e) { return []; } }
+        // Restored Tag Extractor!
+        function extractTags(vidObj, apiType) {
+            let tags = [];
+            try {
+                if (apiType === 'EPorner' && vidObj.keywords) tags = vidObj.keywords.split(',').map(t => t.trim());
+                else if (vidObj.tags) tags = vidObj.tags.map(t => t.tag_name || t.name || t).filter(Boolean);
+            } catch(e) {}
+            return tags.map(t => t.toLowerCase());
+        }
+
+        async function getEPorner(tag) { try { const r = await fetch(`https://www.eporner.com/api/v2/video/search/?query=${encodeURIComponent(tag)}&format=json&per_page=30`); const d = await r.json(); return d.videos ? d.videos.map(v => ({ title: v.title, embed: `https://www.eporner.com/embed/${v.id}/`, source: 'EPorner', tags: extractTags(v, 'EPorner'), durationSec: parseDuration(v.length_sec || v.length_min) })) : []; } catch (e) { return []; } }
+        async function getRedTube(tag) { try { const r = await fetch(`https://api.redtube.com/?data=redtube.Videos.searchVideos&search=${encodeURIComponent(tag)}&output=json`); const d = await r.json(); return d.videos ? d.videos.map(v => ({ title: v.video.title, embed: v.video.embed_url, source: 'RedTube', tags: extractTags(v.video, 'RedTube'), durationSec: parseDuration(v.video.duration) })) : []; } catch (e) { return []; } }
+        async function getPornhub(tag) { try { const r = await fetch(`https://www.pornhub.com/webmasters/search?search=${encodeURIComponent(tag)}`); const d = await r.json(); return d.videos ? d.videos.map(v => ({ title: v.title, embed: v.embed || `https://www.pornhub.com/embed/${v.video_id}`, source: 'Pornhub', tags: extractTags(v, 'Pornhub'), durationSec: parseDuration(v.duration) })) : []; } catch (e) { return []; } }
 
         /* --- UI UPDATER --- */
         function loadVideoIntoPlayer() {
@@ -432,27 +411,50 @@
             document.getElementById('player').src = currentVideo.embed;
             document.getElementById('videoTitle').innerText = currentVideo.title;
             document.getElementById('videoSource').innerText = `Source: ${currentVideo.source}`;
+            
+            // Restored Tags HTML Generator!
+            const tagsContainer = document.getElementById('videoTagsContainer');
+            if (currentVideo.tags && currentVideo.tags.length > 0) {
+                tagsContainer.innerHTML = currentVideo.tags.map(tag => `<div class="vid-tag-chip" onclick="banTag('${tag}')">${tag}</div>`).join('');
+            } else {
+                tagsContainer.innerHTML = "<span style='color:#666; font-size:0.8rem;'>No tags provided</span>";
+            }
+
             updateStarUI();
             addToHistory(currentVideo);
         }
 
         /* --- CORE LOGIC --- */
         async function fetchAndSpin() {
-            const tag = document.getElementById('tagInput').value.trim();
+            const searchTag = document.getElementById('tagInput').value.trim();
             const dur = document.getElementById('durationSelect').value;
-            if (!tag) return;
+            if (!searchTag) return;
 
             document.getElementById('videoTitle').innerText = "Scouring APIs...";
-            const results = await Promise.all([ getEPorner(tag), getRedTube(tag), getPornhub(tag) ]);
+            document.getElementById('videoTagsContainer').innerHTML = "";
+
+            const results = await Promise.all([ getEPorner(searchTag), getRedTube(searchTag), getPornhub(searchTag) ]);
             let combined = results.flat();
 
-            if (bannedTags.length > 0) {
+            // 1. Anti-Cam Spam Filter
+            const searchTagLower = searchTag.toLowerCase();
+            if (!searchTagLower.includes('cam')) {
                 combined = combined.filter(v => {
-                    if (!v.tags) return true;
-                    return !bannedTags.some(ban => (v.tags.toLowerCase() || "").includes(ban));
+                    const titleStr = v.title.toLowerCase();
+                    const tagsStr = (v.tags || []).join(' ').toLowerCase();
+                    return !titleStr.includes('live cam') && !titleStr.includes('myfreecams') && !tagsStr.includes('webcam') && !tagsStr.includes('chaturbate');
                 });
             }
 
+            // 2. Blacklist Filter
+            if (bannedTags.length > 0) {
+                combined = combined.filter(v => {
+                    if (!v.tags || v.tags.length === 0) return true;
+                    return !v.tags.some(t => bannedTags.includes(t));
+                });
+            }
+
+            // 3. Duration Filter
             if (dur !== 'any') {
                 combined = combined.filter(v => {
                     if (v.durationSec === 0) return false; 
@@ -462,7 +464,10 @@
                 });
             }
 
-            if (combined.length === 0) return document.getElementById('videoTitle').innerText = "No videos found.";
+            if (combined.length === 0) {
+                document.getElementById('videoTitle').innerText = "No videos found.";
+                return;
+            }
             
             currentVideo = combined[Math.floor(Math.random() * combined.length)];
             
@@ -473,10 +478,10 @@
         // --- BOOTSTRAP ---
         window.onload = () => { 
             initTheme();
-            renderCustomChips(); // Load user's saved chips
+            renderCustomChips(); 
             const params = new URLSearchParams(window.location.search);
             if (params.has('embed')) {
-                currentVideo = { embed: params.get('embed'), title: params.get('title') || 'Shared Video', source: params.get('source') || 'Unknown', durationSec: 0 };
+                currentVideo = { embed: params.get('embed'), title: params.get('title') || 'Shared Video', source: params.get('source') || 'Unknown', tags: [], durationSec: 0 };
                 loadVideoIntoPlayer();
             } else {
                 fetchAndSpin(); 
