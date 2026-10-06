@@ -40,11 +40,17 @@
         #animationsSubTabs .tab { font-size: 0.85rem; padding: 6px 12px; }
 
         /* Controls */
-        .controls { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; width: 100%; max-width: 900px;}
-        input, select, button { padding: 10px 16px; font-size: 1rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--surface-color); color: var(--text-color); }
+        .controls { margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; width: 100%; max-width: 900px;}
+        input[type="text"], select, button { padding: 10px 16px; font-size: 1rem; border-radius: 6px; border: 1px solid var(--border-color); background: var(--surface-color); color: var(--text-color); }
         input[type="text"] { flex-grow: 1; min-width: 150px; max-width: 300px; }
         button.spin-btn { background-color: var(--accent-color); border: none; cursor: pointer; font-weight: bold; color: white;}
         button.spin-btn:hover { background-color: var(--accent-hover); }
+        
+        /* Source Picker */
+        .source-picker { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 800px; margin-bottom: 15px; width: 100%; }
+        .source-lbl { font-size: 0.85rem; display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--surface-color); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border-color); transition: all 0.2s; user-select: none; }
+        .source-lbl:hover { border-color: var(--accent-color); }
+        .source-lbl input { cursor: pointer; }
         
         /* Custom Tags */
         .custom-tags-container { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 800px; margin-bottom: 20px; width: 100%; }
@@ -144,6 +150,16 @@
         <button class="spin-btn" onclick="initSpin()">SPIN 🎰</button>
     </div>
 
+    <!-- NEW: Source Picker -->
+    <div class="source-picker" id="sourcePicker">
+        <label class="source-lbl"><input type="checkbox" value="eporner" onchange="saveSources()"> EPorner</label>
+        <label class="source-lbl"><input type="checkbox" value="redtube" onchange="saveSources()"> RedTube</label>
+        <label class="source-lbl"><input type="checkbox" value="pornhub" onchange="saveSources()"> Pornhub</label>
+        <label class="source-lbl"><input type="checkbox" value="youporn" onchange="saveSources()"> YouPorn</label>
+        <label class="source-lbl"><input type="checkbox" value="tube8" onchange="saveSources()"> Tube8</label>
+        <label class="source-lbl"><input type="checkbox" value="rule34" onchange="saveSources()"> Rule34</label>
+    </div>
+
     <div class="custom-tags-container" id="customTagsContainer"></div>
 
     <div class="video-container">
@@ -178,7 +194,7 @@
     <div id="settingsModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>⚙️ Settings & Data</h2>
+                <h2>⚙️️ Settings & Data</h2>
                 <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
             </div>
             <h3 style="margin-top: 0; margin-bottom: 10px;">Appearance</h3>
@@ -188,7 +204,7 @@
                 <option value="retro">Retro Synthwave</option>
             </select>
             <h3 style="margin-top: 0; margin-bottom: 5px;">Backup & Sync (Offline)</h3>
-            <p style="font-size: 0.85rem; color: #aaa; margin-top: 0; margin-bottom: 15px;">Download your Favorites, History, Banned Tags, and Custom Chips to a file, then load them on another device.</p>
+            <p style="font-size: 0.85rem; color: #aaa; margin-top: 0; margin-bottom: 15px;">Download your Favorites, History, Banned Tags, Custom Chips, and Settings to a file, then load them on another device.</p>
             <button class="data-btn" onclick="exportData()">📦 Download Backup File</button>
             <label for="importFile" class="data-btn">📂 Load Backup File</label>
             <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
@@ -244,6 +260,7 @@
         let watchHistory = JSON.parse(localStorage.getItem('roulette_history')) || [];
         let bannedTags = JSON.parse(localStorage.getItem('roulette_blacklist')) || [];
         let customChips = JSON.parse(localStorage.getItem('roulette_custom_chips')) || [];
+        let activeSources = JSON.parse(localStorage.getItem('roulette_sources')) || ['eporner', 'redtube', 'pornhub', 'youporn', 'tube8', 'rule34'];
 
         // --- PANIC BUTTON ---
         document.addEventListener('keydown', (e) => {
@@ -252,6 +269,17 @@
                 window.location.replace('https://www.google.com');
             }
         });
+
+        // --- SOURCE PICKER ---
+        function initSourcesUI() {
+            document.querySelectorAll('#sourcePicker input[type="checkbox"]').forEach(cb => {
+                cb.checked = activeSources.includes(cb.value);
+            });
+        }
+        function saveSources() {
+            activeSources = Array.from(document.querySelectorAll('#sourcePicker input[type="checkbox"]:checked')).map(cb => cb.value);
+            localStorage.setItem('roulette_sources', JSON.stringify(activeSources));
+        }
 
         // --- UI TOGGLES ---
         function toggleMode() {
@@ -329,7 +357,11 @@
 
         // --- EXPORT & IMPORT DATA ---
         function exportData() {
-            const backup = { favorites: savedFavorites, history: watchHistory, blacklist: bannedTags, customChips: customChips, theme: localStorage.getItem('roulette_theme') || 'default' };
+            const backup = { 
+                favorites: savedFavorites, history: watchHistory, blacklist: bannedTags, 
+                customChips: customChips, theme: localStorage.getItem('roulette_theme') || 'default',
+                sources: activeSources
+            };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup));
             const downloadLink = document.createElement('a');
             downloadLink.setAttribute("href", dataStr);
@@ -347,6 +379,7 @@
                     if (importedData.history) localStorage.setItem('roulette_history', JSON.stringify(importedData.history));
                     if (importedData.blacklist) localStorage.setItem('roulette_blacklist', JSON.stringify(importedData.blacklist));
                     if (importedData.customChips) localStorage.setItem('roulette_custom_chips', JSON.stringify(importedData.customChips));
+                    if (importedData.sources) localStorage.setItem('roulette_sources', JSON.stringify(importedData.sources));
                     if (importedData.theme) localStorage.setItem('roulette_theme', importedData.theme);
                     alert("✅ Data successfully imported! The page will now refresh.");
                     window.location.reload();
@@ -467,8 +500,7 @@
             return tags.map(t => t.toLowerCase());
         }
 
-        // 🚀 UPGRADED: Dynamic Paging System
-        // MaxPage is now dynamic so we can dive deep (50 pages) or shallow (3 pages) based on need.
+        // 🚀 API FETCHERS
         const getRandomPage = (maxPage) => Math.floor(Math.random() * maxPage) + 1;
 
         async function getRule34(tag, mode, topX, maxPage) {
@@ -477,7 +509,6 @@
                 if (mode === 'best') r34Tags += ` sort:score:desc`;
                 else r34Tags += ` score:>40`; 
                 const limit = mode === 'best' ? topX : 100;
-                // Rule34 PID handles pages differently. Keep it slightly lower to avoid 404s.
                 const page = mode === 'best' ? 0 : Math.floor(Math.random() * (maxPage * 2)); 
 
                 const r = await fetch(`https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&limit=${limit}&pid=${page}&tags=${encodeURIComponent(r34Tags)}`);
@@ -566,16 +597,24 @@
             addToHistory(currentVideo);
         }
 
-        /* --- CORE LOGIC (WITH DEEP DIVE FALLBACK) --- */
+        /* --- CORE LOGIC --- */
         async function fetchPool(searchTag, dur, mode, topX, maxPageLevel) {
-            const results = await Promise.all([ 
-                getEPorner(searchTag, mode, topX, maxPageLevel), 
-                getRedTube(searchTag, mode, topX, maxPageLevel), 
-                getPornhub(searchTag, mode, topX, maxPageLevel), 
-                getYouPorn(searchTag, mode, topX, maxPageLevel), 
-                getTube8(searchTag, mode, topX, maxPageLevel),
-                getRule34(searchTag, mode, topX, maxPageLevel) 
-            ]);
+            
+            // Respect Source Picker
+            const promises = [];
+            if (activeSources.includes('eporner')) promises.push(getEPorner(searchTag, mode, topX, maxPageLevel));
+            if (activeSources.includes('redtube')) promises.push(getRedTube(searchTag, mode, topX, maxPageLevel));
+            if (activeSources.includes('pornhub')) promises.push(getPornhub(searchTag, mode, topX, maxPageLevel));
+            if (activeSources.includes('youporn')) promises.push(getYouPorn(searchTag, mode, topX, maxPageLevel));
+            if (activeSources.includes('tube8')) promises.push(getTube8(searchTag, mode, topX, maxPageLevel));
+            if (activeSources.includes('rule34')) promises.push(getRule34(searchTag, mode, topX, maxPageLevel));
+
+            if (promises.length === 0) {
+                alert("Please select at least one source below the search bar!");
+                return [];
+            }
+
+            const results = await Promise.all(promises);
             let combined = results.flat();
 
             const isCamSearch = searchTag.toLowerCase().includes('cam');
@@ -636,21 +675,18 @@
             if (topX > 100) topX = 100;
 
             if (!searchTag) return;
+            if (activeSources.length === 0) return alert("Please select at least one source below the search bar!");
 
             document.getElementById('videoTagsContainer').innerHTML = "";
 
             if (mode === 'best') {
                 document.getElementById('videoTitle').innerText = `Fetching Top ${topX} Highest Rated...`;
-                let pool = await fetchPool(searchTag, dur, mode, topX, 1); // Best mode doesn't need deep paging
+                let pool = await fetchPool(searchTag, dur, mode, topX, 1);
                 finalizeSpin(pool);
             } else {
-                // ENDLESS SHUFFLE MODE: The Intelligent Fallback System
                 document.getElementById('videoTitle').innerText = "Scouring the Deepest Pages (1 - 50)...";
-                
-                // Attempt 1: Deep Dive (Look for videos deep in the archives)
                 let pool = await fetchPool(searchTag, dur, mode, topX, 50); 
                 
-                // Attempt 2: Shallow Rescue (If the deep dive found nothing because the tag is too rare)
                 if (pool.length === 0) {
                     document.getElementById('videoTitle').innerText = "Deep pages empty. Running Shallow Rescue...";
                     pool = await fetchPool(searchTag, dur, mode, topX, 3);
@@ -674,6 +710,7 @@
         // --- BOOTSTRAP ---
         window.onload = () => { 
             initTheme();
+            initSourcesUI();
             renderCustomChips(); 
             const params = new URLSearchParams(window.location.search);
             if (params.has('embed')) {
