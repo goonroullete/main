@@ -500,94 +500,120 @@
             return tags.map(t => t.toLowerCase());
         }
 
-       // --- RENDER PROXY URL ---
-        const PROXY_URL = 'https://video-proxy-server-wgng.onrender.com';
+        // --- PROXY ---
+        const PROXY_URL = 'https://video-proxy-server-wgng.onrender.com/proxy?url=';
+        const viaProxy = (target) => PROXY_URL + encodeURIComponent(target);
 
-        // 🚀 API FETCHERS (Routed via Proxy)
-        const getRandomPage = (maxPage) => Math.floor(Math.random() * maxPage) + 1;
+       // Fetch JSON and throw on HTTP errors so failures show up in the console
+       async function fetchJSON(url) {
+         const r = await fetch(url);
+         if (!r.ok) throw new Error(`HTTP ${r.status}`);
+         return r.json();
+}
 
-        async function getRule34(tag, mode, topX, maxPage) {
-            try {
-                let r34Tags = `${tag} video`;
-                if (mode === 'best') r34Tags += ` sort:score:desc`;
-                else r34Tags += ` score:>40`; 
-                const limit = mode === 'best' ? topX : 100;
-                const page = mode === 'best' ? 0 : Math.floor(Math.random() * (maxPage * 2)); 
+      // 🚀 API FETCHERS
+      const getRandomPage = (maxPage) => Math.floor(Math.random() * maxPage) + 1;
 
-                const r = await fetch(`https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&limit=${limit}&pid=${page}&tags=${encodeURIComponent(r34Tags)}`);
-                const d = await r.json();
+// Rule34 now requires these (get them from your rule34.xxx account settings)
+const R34_API_KEY = 'YOUR_API_KEY';
+const R34_USER_ID = 'YOUR_USER_ID';
 
-                return d ? d.map(v => ({
-                    title: `Animation #${v.id}`, embed: v.file_url, source: 'Rule34.xxx', tags: v.tags.split(' ').filter(Boolean), durationSec: 60 
-                })) : [];
-            } catch (e) { return []; }
-        }
+async function getRule34(tag, mode, topX, maxPage) {
+    try {
+        let r34Tags = `${tag} video`;
+        if (mode === 'best') r34Tags += ` sort:score:desc`;
+        else r34Tags += ` score:>40`;
+        const limit = mode === 'best' ? topX : 100;
+        const page = mode === 'best' ? 0 : Math.floor(Math.random() * (maxPage * 2));
 
-        async function getEPorner(tag, mode, topX, maxPage) { 
-            try { 
-                const limit = mode === 'best' ? topX : 100;
-                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
-                const sort = mode === 'best' ? '&order=top-all-time' : '';
-                const r = await fetch(`https://www.eporner.com/api/v2/video/search/?query=${encodeURIComponent(tag)}&format=json&per_page=${limit}&page=${page}${sort}`); 
-                const d = await r.json(); 
-                return d.videos ? d.videos.map(v => ({ title: v.title, embed: `https://www.eporner.com/embed/${v.id}/`, source: 'EPorner', tags: extractTags(v, 'EPorner'), durationSec: parseDuration(v.length_sec || v.length_min) })) : []; 
-            } catch (e) { return []; } 
-        }
+        const target = `https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&limit=${limit}&pid=${page}&tags=${encodeURIComponent(r34Tags)}&api_key=${R34_API_KEY}&user_id=${R34_USER_ID}`;
+        const d = await fetchJSON(viaProxy(target));
 
-        async function getRedTube(tag, mode, topX, maxPage) { 
-            try { 
-                const limit = mode === 'best' ? topX : 100;
-                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
-                const sort = mode === 'best' ? '&ordering=rating' : '';
-                const target = `https://api.redtube.com/?data=redtube.Videos.searchVideos&search=${encodeURIComponent(tag)}&output=json&limit=${limit}&page=${page}${sort}`;
-                
-                const r = await fetch(PROXY_URL + encodeURIComponent(target)); 
-                const d = await r.json(); 
-                return d.videos ? d.videos.map(v => ({ title: v.video.title, embed: v.video.embed_url, source: 'RedTube', tags: extractTags(v.video, 'RedTube'), durationSec: parseDuration(v.video.duration) })) : []; 
-            } catch (e) { return []; } 
-        }
+        return Array.isArray(d) ? d.map(v => ({
+            title: `Animation #${v.id}`, embed: v.file_url, source: 'Rule34.xxx',
+            tags: (v.tags || '').split(' ').filter(Boolean), durationSec: 60
+        })) : [];
+    } catch (e) { console.warn('Rule34 failed:', e); return []; }
+}
 
-        async function getPornhub(tag, mode, topX, maxPage) { 
-            try { 
-                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
-                const sort = mode === 'best' ? '&ordering=rating' : '';
-                const target = `https://www.pornhub.com/webmasters/search?search=${encodeURIComponent(tag)}&page=${page}${sort}`;
-                
-                const r = await fetch(PROXY_URL + encodeURIComponent(target)); 
-                const d = await r.json(); 
-                let vids = d.videos ? d.videos.map(v => ({ title: v.title, embed: v.embed || `https://www.pornhub.com/embed/${v.video_id}`, source: 'Pornhub', tags: extractTags(v, 'Pornhub'), durationSec: parseDuration(v.duration) })) : []; 
-                if (mode === 'best') vids = vids.slice(0, topX);
-                return vids;
-            } catch (e) { return []; } 
-        }
+async function getEPorner(tag, mode, topX, maxPage) {
+    try {
+        const limit = mode === 'best' ? topX : 100;
+        const page = mode === 'best' ? 1 : getRandomPage(maxPage);
+        const sort = mode === 'best' ? '&order=top-all-time' : '';
+        const target = `https://www.eporner.com/api/v2/video/search/?query=${encodeURIComponent(tag)}&format=json&per_page=${limit}&page=${page}${sort}`;
 
-       async function getYouPorn(tag, mode, topX, maxPage) { 
-            try { 
-                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
-                const sort = mode === 'best' ? '&ordering=rating' : '';
-                const target = `https://www.youporn.com/api/webmasters/search?search=${encodeURIComponent(tag)}&page=${page}${sort}`;
-                
-                const r = await fetch(PROXY_URL + encodeURIComponent(target)); 
-                const d = await r.json(); 
-                const rawVids = d.videos || d.video;
-                let vids = rawVids ? rawVids.map(v => ({ title: v.title, embed: v.embed, source: 'YouPorn', tags: extractTags(v, 'YouPorn'), durationSec: parseDuration(v.duration) })) : []; 
-                if (mode === 'best') vids = vids.slice(0, topX);
-                return vids;
-            } catch (e) { return []; } 
-        }
+        const d = await fetchJSON(target); // direct call, as before
+        return d.videos ? d.videos.map(v => ({
+            title: v.title, embed: `https://www.eporner.com/embed/${v.id}/`, source: 'EPorner',
+            tags: extractTags(v, 'EPorner'), durationSec: parseDuration(v.length_sec || v.length_min)
+        })) : [];
+    } catch (e) { console.warn('EPorner failed:', e); return []; }
+}
 
-        async function getTube8(tag, mode, topX, maxPage) { 
-            try { 
-                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
-                const sort = mode === 'best' ? '&ordering=rating' : '';
-                const target = `https://api.tube8.com/api.php?action=searchVideos&q=${encodeURIComponent(tag)}&output=json&page=${page}${sort}`;
-                
-                const r = await fetch(PROXY_URL + encodeURIComponent(target)); 
-                const d = await r.json(); 
-                let vids = d.videos ? d.videos.map(v => ({ title: v.video.title, embed: v.video.embed_url, source: 'Tube8', tags: extractTags(v.video, 'Tube8'), durationSec: parseDuration(v.video.duration) })) : []; 
-                if (mode === 'best') vids = vids.slice(0, topX);
-                return vids;
-            } catch (e) { return []; } 
+async function getRedTube(tag, mode, topX, maxPage) {
+    try {
+        const limit = mode === 'best' ? topX : 100;
+        const page = mode === 'best' ? 1 : getRandomPage(maxPage);
+        const sort = mode === 'best' ? '&ordering=rating' : '';
+        const target = `https://api.redtube.com/?data=redtube.Videos.searchVideos&search=${encodeURIComponent(tag)}&output=json&limit=${limit}&page=${page}${sort}`;
+
+        const d = await fetchJSON(viaProxy(target));
+        return d.videos ? d.videos.map(v => ({
+            title: v.video.title, embed: v.video.embed_url, source: 'RedTube',
+            tags: extractTags(v.video, 'RedTube'), durationSec: parseDuration(v.video.duration)
+        })) : [];
+    } catch (e) { console.warn('RedTube failed:', e); return []; }
+}
+
+async function getPornhub(tag, mode, topX, maxPage) {
+    try {
+        const page = mode === 'best' ? 1 : getRandomPage(maxPage);
+        const sort = mode === 'best' ? '&ordering=rating' : '';
+        const target = `https://www.pornhub.com/webmasters/search?search=${encodeURIComponent(tag)}&page=${page}${sort}`;
+
+        const d = await fetchJSON(viaProxy(target));
+        let vids = d.videos ? d.videos.map(v => ({
+            title: v.title, embed: v.embed || `https://www.pornhub.com/embed/${v.video_id}`, source: 'Pornhub',
+            tags: extractTags(v, 'Pornhub'), durationSec: parseDuration(v.duration)
+        })) : [];
+        if (mode === 'best') vids = vids.slice(0, topX);
+        return vids;
+    } catch (e) { console.warn('Pornhub failed:', e); return []; }
+}
+
+async function getYouPorn(tag, mode, topX, maxPage) {
+    try {
+        const page = mode === 'best' ? 1 : getRandomPage(maxPage);
+        const sort = mode === 'best' ? '&ordering=rating' : '';
+        const target = `https://www.youporn.com/api/webmasters/search?search=${encodeURIComponent(tag)}&page=${page}${sort}`;
+
+        const d = await fetchJSON(viaProxy(target));
+        const rawVids = d.videos || d.video;
+        let vids = rawVids ? rawVids.map(v => ({
+            title: v.title, embed: v.embed, source: 'YouPorn',
+            tags: extractTags(v, 'YouPorn'), durationSec: parseDuration(v.duration)
+        })) : [];
+        if (mode === 'best') vids = vids.slice(0, topX);
+        return vids;
+    } catch (e) { console.warn('YouPorn failed:', e); return []; }
+}
+
+async function getTube8(tag, mode, topX, maxPage) {
+    try {
+        const page = mode === 'best' ? 1 : getRandomPage(maxPage);
+        const sort = mode === 'best' ? '&ordering=rating' : '';
+        const target = `https://api.tube8.com/api.php?action=searchVideos&q=${encodeURIComponent(tag)}&output=json&page=${page}${sort}`;
+
+        const d = await fetchJSON(viaProxy(target));
+        let vids = d.videos ? d.videos.map(v => ({
+            title: v.video.title, embed: v.video.embed_url, source: 'Tube8',
+            tags: extractTags(v.video, 'Tube8'), durationSec: parseDuration(v.video.duration)
+        })) : [];
+        if (mode === 'best') vids = vids.slice(0, topX);
+        return vids;
+    } catch (e) { console.warn('Tube8 failed:', e); return []; }
+}
         }
 
         /* --- UI UPDATER --- */
