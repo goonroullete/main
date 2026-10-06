@@ -501,7 +501,7 @@
         }
 
        // --- RENDER PROXY URL ---
-        const PROXY_URL = 'https://your-render-app-name.onrender.com/proxy?url=';
+        const PROXY_URL = 'https://video-proxy-server-wgng.onrender.com';
 
         // 🚀 API FETCHERS (Routed via Proxy)
         const getRandomPage = (maxPage) => Math.floor(Math.random() * maxPage) + 1;
@@ -561,7 +561,7 @@
             } catch (e) { return []; } 
         }
 
-        async function getYouPorn(tag, mode, topX, maxPage) { 
+       async function getYouPorn(tag, mode, topX, maxPage) { 
             try { 
                 const page = mode === 'best' ? 1 : getRandomPage(maxPage);
                 const sort = mode === 'best' ? '&ordering=rating' : '';
