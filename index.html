@@ -500,7 +500,10 @@
             return tags.map(t => t.toLowerCase());
         }
 
-        // 🚀 API FETCHERS
+       // --- RENDER PROXY URL ---
+        const PROXY_URL = 'https://your-render-app-name.onrender.com/proxy?url=';
+
+        // 🚀 API FETCHERS (Routed via Proxy)
         const getRandomPage = (maxPage) => Math.floor(Math.random() * maxPage) + 1;
 
         async function getRule34(tag, mode, topX, maxPage) {
@@ -536,7 +539,9 @@
                 const limit = mode === 'best' ? topX : 100;
                 const page = mode === 'best' ? 1 : getRandomPage(maxPage);
                 const sort = mode === 'best' ? '&ordering=rating' : '';
-                const r = await fetch(`https://api.redtube.com/?data=redtube.Videos.searchVideos&search=${encodeURIComponent(tag)}&output=json&limit=${limit}&page=${page}${sort}`); 
+                const target = `https://api.redtube.com/?data=redtube.Videos.searchVideos&search=${encodeURIComponent(tag)}&output=json&limit=${limit}&page=${page}${sort}`;
+                
+                const r = await fetch(PROXY_URL + encodeURIComponent(target)); 
                 const d = await r.json(); 
                 return d.videos ? d.videos.map(v => ({ title: v.video.title, embed: v.video.embed_url, source: 'RedTube', tags: extractTags(v.video, 'RedTube'), durationSec: parseDuration(v.video.duration) })) : []; 
             } catch (e) { return []; } 
@@ -546,7 +551,9 @@
             try { 
                 const page = mode === 'best' ? 1 : getRandomPage(maxPage);
                 const sort = mode === 'best' ? '&ordering=rating' : '';
-                const r = await fetch(`https://www.pornhub.com/webmasters/search?search=${encodeURIComponent(tag)}&page=${page}${sort}`); 
+                const target = `https://www.pornhub.com/webmasters/search?search=${encodeURIComponent(tag)}&page=${page}${sort}`;
+                
+                const r = await fetch(PROXY_URL + encodeURIComponent(target)); 
                 const d = await r.json(); 
                 let vids = d.videos ? d.videos.map(v => ({ title: v.title, embed: v.embed || `https://www.pornhub.com/embed/${v.video_id}`, source: 'Pornhub', tags: extractTags(v, 'Pornhub'), durationSec: parseDuration(v.duration) })) : []; 
                 if (mode === 'best') vids = vids.slice(0, topX);
@@ -558,7 +565,9 @@
             try { 
                 const page = mode === 'best' ? 1 : getRandomPage(maxPage);
                 const sort = mode === 'best' ? '&ordering=rating' : '';
-                const r = await fetch(`https://www.youporn.com/api/webmasters/search?search=${encodeURIComponent(tag)}&page=${page}${sort}`); 
+                const target = `https://www.youporn.com/api/webmasters/search?search=${encodeURIComponent(tag)}&page=${page}${sort}`;
+                
+                const r = await fetch(PROXY_URL + encodeURIComponent(target)); 
                 const d = await r.json(); 
                 const rawVids = d.videos || d.video;
                 let vids = rawVids ? rawVids.map(v => ({ title: v.title, embed: v.embed, source: 'YouPorn', tags: extractTags(v, 'YouPorn'), durationSec: parseDuration(v.duration) })) : []; 
@@ -571,7 +580,9 @@
             try { 
                 const page = mode === 'best' ? 1 : getRandomPage(maxPage);
                 const sort = mode === 'best' ? '&ordering=rating' : '';
-                const r = await fetch(`https://api.tube8.com/api.php?action=searchVideos&q=${encodeURIComponent(tag)}&output=json&page=${page}${sort}`); 
+                const target = `https://api.tube8.com/api.php?action=searchVideos&q=${encodeURIComponent(tag)}&output=json&page=${page}${sort}`;
+                
+                const r = await fetch(PROXY_URL + encodeURIComponent(target)); 
                 const d = await r.json(); 
                 let vids = d.videos ? d.videos.map(v => ({ title: v.video.title, embed: v.video.embed_url, source: 'Tube8', tags: extractTags(v.video, 'Tube8'), durationSec: parseDuration(v.video.duration) })) : []; 
                 if (mode === 'best') vids = vids.slice(0, topX);
