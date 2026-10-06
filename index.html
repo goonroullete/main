@@ -19,8 +19,10 @@
         .header-container { width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;}
         h1 { margin: 0; font-size: 1.8rem; }
         .header-buttons { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;}
-        .menu-btn { background: var(--surface-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+        .menu-btn { background: var(--surface-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: background 0.2s, color 0.2s; }
         .menu-btn:hover:not(.disabled-btn) { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+        .ban-btn { color: #ff5252; border-color: #ff5252; }
+        .ban-btn:hover { background: #ff5252 !important; color: white !important; border-color: #ff5252 !important; }
         .theme-select { background: var(--surface-color); color: var(--text-color); border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; }
 
         /* WIP & Disabled State */
@@ -46,11 +48,12 @@
         button.spin-btn { background-color: var(--accent-color); border: none; cursor: pointer; font-weight: bold; color: white;}
         button.spin-btn:hover { background-color: var(--accent-hover); }
         
-        /* Source Picker */
+        /* Source Picker & Badges */
         .source-picker { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 800px; margin-bottom: 15px; width: 100%; }
         .source-lbl { font-size: 0.85rem; display: flex; align-items: center; gap: 6px; cursor: pointer; background: var(--surface-color); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border-color); transition: all 0.2s; user-select: none; }
         .source-lbl:hover { border-color: var(--accent-color); }
         .source-lbl input { cursor: pointer; }
+        .badge { font-size: 0.75rem; color: #aaa; margin-left: 2px; font-weight: bold; min-width: 25px; text-align: center; }
         
         /* Custom Tags */
         .custom-tags-container { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 800px; margin-bottom: 20px; width: 100%; }
@@ -126,8 +129,12 @@
 
     <!-- Controls -->
     <div class="controls">
-        <input type="text" id="tagInput" placeholder="Enter search tag..." value="jav">
+        <datalist id="recentSearches"></datalist>
+        <input type="text" id="tagInput" list="recentSearches" placeholder="Enter search tag..." value="jav">
+        
         <button class="menu-btn" onclick="saveCustomTag()" title="Save Tag as Chip" style="padding: 10px;">💾 Save</button>
+        <button class="menu-btn ban-btn" onclick="banCurrentInput()" title="Quick-Ban current tag text" style="padding: 10px;">🚫 Ban</button>
+        
         <select id="durationSelect">
             <option value="any">Any Length</option>
             <option value="short">Short (Under 5m)</option>
@@ -140,6 +147,14 @@
             <option value="random">Endless Shuffle</option>
             <option value="best">Best Videos Mode</option>
         </select>
+
+        <!-- Auto-Spin Mode -->
+        <select id="autoSpinSelect" onchange="toggleAutoSpin()">
+            <option value="0">Auto-Spin: OFF</option>
+            <option value="300000">Auto: 5 mins</option>
+            <option value="600000">Auto: 10 mins</option>
+            <option value="900000">Auto: 15 mins</option>
+        </select>
         
         <!-- Top X Input -->
         <div id="topXContainer" style="display: none; align-items: center; gap: 5px;">
@@ -150,14 +165,14 @@
         <button class="spin-btn" onclick="initSpin()">SPIN 🎰</button>
     </div>
 
-    <!-- NEW: Source Picker -->
+    <!-- Source Picker with Badges -->
     <div class="source-picker" id="sourcePicker">
-        <label class="source-lbl"><input type="checkbox" value="eporner" onchange="saveSources()"> EPorner</label>
-        <label class="source-lbl"><input type="checkbox" value="redtube" onchange="saveSources()"> RedTube</label>
-        <label class="source-lbl"><input type="checkbox" value="pornhub" onchange="saveSources()"> Pornhub</label>
-        <label class="source-lbl"><input type="checkbox" value="youporn" onchange="saveSources()"> YouPorn</label>
-        <label class="source-lbl"><input type="checkbox" value="tube8" onchange="saveSources()"> Tube8</label>
-        <label class="source-lbl"><input type="checkbox" value="rule34" onchange="saveSources()"> Rule34</label>
+        <label class="source-lbl"><input type="checkbox" value="eporner" onchange="saveSources()"> EPorner <span class="badge" id="badge-eporner"></span></label>
+        <label class="source-lbl"><input type="checkbox" value="redtube" onchange="saveSources()"> RedTube <span class="badge" id="badge-redtube"></span></label>
+        <label class="source-lbl"><input type="checkbox" value="pornhub" onchange="saveSources()"> Pornhub <span class="badge" id="badge-pornhub"></span></label>
+        <label class="source-lbl"><input type="checkbox" value="youporn" onchange="saveSources()"> YouPorn <span class="badge" id="badge-youporn"></span></label>
+        <label class="source-lbl"><input type="checkbox" value="tube8" onchange="saveSources()"> Tube8 <span class="badge" id="badge-tube8"></span></label>
+        <label class="source-lbl"><input type="checkbox" value="rule34" onchange="saveSources()"> Rule34 <span class="badge" id="badge-rule34"></span></label>
     </div>
 
     <div class="custom-tags-container" id="customTagsContainer"></div>
@@ -261,6 +276,15 @@
         let bannedTags = JSON.parse(localStorage.getItem('roulette_blacklist')) || [];
         let customChips = JSON.parse(localStorage.getItem('roulette_custom_chips')) || [];
         let activeSources = JSON.parse(localStorage.getItem('roulette_sources')) || ['eporner', 'redtube', 'pornhub', 'youporn', 'tube8', 'rule34'];
+        let recentSearches = JSON.parse(localStorage.getItem('roulette_recent_searches')) || [];
+        
+        // --- BUFFERS & TIMERS ---
+        let videoBuffer = [];
+        let currentSearchKey = "";
+        let autoSpinInterval = null;
+
+        // --- RENDER PROXY URL (Ensure this matches your actual Render app) ---
+        const PROXY_URL = 'https://video-proxy-server-wgng.onrender.com/proxy?url=';
 
         // --- PANIC BUTTON ---
         document.addEventListener('keydown', (e) => {
@@ -281,10 +305,17 @@
             localStorage.setItem('roulette_sources', JSON.stringify(activeSources));
         }
 
-        // --- UI TOGGLES ---
+        // --- UI TOGGLES & AUTO-SPIN ---
         function toggleMode() {
             const mode = document.getElementById('modeSelect').value;
             document.getElementById('topXContainer').style.display = mode === 'best' ? 'flex' : 'none';
+        }
+        function toggleAutoSpin() {
+            clearInterval(autoSpinInterval);
+            const val = parseInt(document.getElementById('autoSpinSelect').value);
+            if (val > 0) {
+                autoSpinInterval = setInterval(initSpin, val);
+            }
         }
 
         // --- THEME ENGINE ---
@@ -300,6 +331,20 @@
         function applyTheme(theme) {
             document.body.className = '';
             if (theme !== 'default') document.body.classList.add(`theme-${theme}`);
+        }
+
+        // --- RECENT SEARCHES DROPDOWN ---
+        function updateRecentSearches() {
+            const datalist = document.getElementById('recentSearches');
+            datalist.innerHTML = recentSearches.map(t => `<option value="${t}">`).join('');
+        }
+        function addRecentSearch(tag) {
+            if (!tag) return;
+            recentSearches = recentSearches.filter(t => t !== tag); // Remove duplicates
+            recentSearches.unshift(tag);
+            if (recentSearches.length > 15) recentSearches.pop(); // Keep last 15
+            localStorage.setItem('roulette_recent_searches', JSON.stringify(recentSearches));
+            updateRecentSearches();
         }
 
         // --- CUSTOM CHIPS SYSTEM ---
@@ -340,6 +385,11 @@
                 initSpin(); 
             }
         }
+        function banCurrentInput() {
+            const tag = document.getElementById('tagInput').value.trim();
+            if (tag) banTag(tag);
+            document.getElementById('tagInput').value = '';
+        }
         function unbanTag(tag) {
             bannedTags = bannedTags.filter(t => t !== tag);
             localStorage.setItem('roulette_blacklist', JSON.stringify(bannedTags));
@@ -360,7 +410,7 @@
             const backup = { 
                 favorites: savedFavorites, history: watchHistory, blacklist: bannedTags, 
                 customChips: customChips, theme: localStorage.getItem('roulette_theme') || 'default',
-                sources: activeSources
+                sources: activeSources, recentSearches: recentSearches
             };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup));
             const downloadLink = document.createElement('a');
@@ -380,6 +430,7 @@
                     if (importedData.blacklist) localStorage.setItem('roulette_blacklist', JSON.stringify(importedData.blacklist));
                     if (importedData.customChips) localStorage.setItem('roulette_custom_chips', JSON.stringify(importedData.customChips));
                     if (importedData.sources) localStorage.setItem('roulette_sources', JSON.stringify(importedData.sources));
+                    if (importedData.recentSearches) localStorage.setItem('roulette_recent_searches', JSON.stringify(importedData.recentSearches));
                     if (importedData.theme) localStorage.setItem('roulette_theme', importedData.theme);
                     alert("✅ Data successfully imported! The page will now refresh.");
                     window.location.reload();
@@ -500,119 +551,118 @@
             return tags.map(t => t.toLowerCase());
         }
 
-        // --- PROXY ---
-        const PROXY_URL = 'https://video-proxy-server-wgng.onrender.com/proxy?url=';
+        // --- PROXY & API HELPERS ---
         const viaProxy = (target) => PROXY_URL + encodeURIComponent(target);
 
-        // Fetch JSON and throw on HTTP errors so failures show up in the console
         async function fetchJSON(url) {
             const r = await fetch(url);
             if (!r.ok) throw new Error(`HTTP ${r.status}`);
             return r.json();
         }
 
+        // Wrapper to track Source Stats Badges
+        async function wrapFetch(sourceName, fetchPromise) {
+            const badge = document.getElementById(`badge-${sourceName}`);
+            if (badge) badge.innerText = `[...]`;
+            try {
+                const results = await fetchPromise;
+                if (badge) badge.innerText = `[${results.length}]`;
+                return results;
+            } catch(e) {
+                if (badge) badge.innerText = `[err]`;
+                return [];
+            }
+        }
+
         // 🚀 API FETCHERS
         const getRandomPage = (maxPage) => Math.floor(Math.random() * maxPage) + 1;
 
-        // Rule34 now requires these (get them from your rule34.xxx account settings)
         const R34_API_KEY = '6893411';
         const R34_USER_ID = '6893411';
 
         async function getRule34(tag, mode, topX, maxPage) {
-            try {
-                let r34Tags = `${tag} video`;
-                if (mode === 'best') r34Tags += ` sort:score:desc`;
-                else r34Tags += ` score:>40`;
-                const limit = mode === 'best' ? topX : 100;
-                const page = mode === 'best' ? 0 : Math.floor(Math.random() * (maxPage * 2));
+            let r34Tags = `${tag} video`;
+            if (mode === 'best') r34Tags += ` sort:score:desc`;
+            else r34Tags += ` score:>40`;
+            const limit = mode === 'best' ? topX : 100;
+            const page = mode === 'best' ? 0 : Math.floor(Math.random() * (maxPage * 2));
 
-                const target = `https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&limit=${limit}&pid=${page}&tags=${encodeURIComponent(r34Tags)}&api_key=${R34_API_KEY}&user_id=${R34_USER_ID}`;
-                const d = await fetchJSON(viaProxy(target));
+            const target = `https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&limit=${limit}&pid=${page}&tags=${encodeURIComponent(r34Tags)}&api_key=${R34_API_KEY}&user_id=${R34_USER_ID}`;
+            const d = await fetchJSON(viaProxy(target));
 
-                return Array.isArray(d) ? d.map(v => ({
-                    title: `Animation #${v.id}`, embed: v.file_url, source: 'Rule34.xxx',
-                    tags: (v.tags || '').split(' ').filter(Boolean), durationSec: 60
-                })) : [];
-            } catch (e) { console.warn('Rule34 failed:', e); return []; }
+            return Array.isArray(d) ? d.map(v => ({
+                title: `Animation #${v.id}`, embed: v.file_url, source: 'Rule34.xxx',
+                tags: (v.tags || '').split(' ').filter(Boolean), durationSec: 60
+            })) : [];
         }
 
         async function getEPorner(tag, mode, topX, maxPage) {
-            try {
-                const limit = mode === 'best' ? topX : 100;
-                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
-                const sort = mode === 'best' ? '&order=top-all-time' : '';
-                const target = `https://www.eporner.com/api/v2/video/search/?query=${encodeURIComponent(tag)}&format=json&per_page=${limit}&page=${page}${sort}`;
+            const limit = mode === 'best' ? topX : 100;
+            const page = mode === 'best' ? 1 : getRandomPage(maxPage);
+            const sort = mode === 'best' ? '&order=top-all-time' : '';
+            const target = `https://www.eporner.com/api/v2/video/search/?query=${encodeURIComponent(tag)}&format=json&per_page=${limit}&page=${page}${sort}`;
 
-                const d = await fetchJSON(target); // direct call, as before
-                return d.videos ? d.videos.map(v => ({
-                    title: v.title, embed: `https://www.eporner.com/embed/${v.id}/`, source: 'EPorner',
-                    tags: extractTags(v, 'EPorner'), durationSec: parseDuration(v.length_sec || v.length_min)
-                })) : [];
-            } catch (e) { console.warn('EPorner failed:', e); return []; }
+            const d = await fetchJSON(target); // EPorner native CORS is fine
+            return d.videos ? d.videos.map(v => ({
+                title: v.title, embed: `https://www.eporner.com/embed/${v.id}/`, source: 'EPorner',
+                tags: extractTags(v, 'EPorner'), durationSec: parseDuration(v.length_sec || v.length_min)
+            })) : [];
         }
 
         async function getRedTube(tag, mode, topX, maxPage) {
-            try {
-                const limit = mode === 'best' ? topX : 100;
-                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
-                const sort = mode === 'best' ? '&ordering=rating' : '';
-                const target = `https://api.redtube.com/?data=redtube.Videos.searchVideos&search=${encodeURIComponent(tag)}&output=json&limit=${limit}&page=${page}${sort}`;
+            const limit = mode === 'best' ? topX : 100;
+            const page = mode === 'best' ? 1 : getRandomPage(maxPage);
+            const sort = mode === 'best' ? '&ordering=rating' : '';
+            const target = `https://api.redtube.com/?data=redtube.Videos.searchVideos&search=${encodeURIComponent(tag)}&output=json&limit=${limit}&page=${page}${sort}`;
 
-                const d = await fetchJSON(viaProxy(target));
-                return d.videos ? d.videos.map(v => ({
-                    title: v.video.title, embed: v.video.embed_url, source: 'RedTube',
-                    tags: extractTags(v.video, 'RedTube'), durationSec: parseDuration(v.video.duration)
-                })) : [];
-            } catch (e) { console.warn('RedTube failed:', e); return []; }
+            const d = await fetchJSON(viaProxy(target));
+            return d.videos ? d.videos.map(v => ({
+                title: v.video.title, embed: v.video.embed_url, source: 'RedTube',
+                tags: extractTags(v.video, 'RedTube'), durationSec: parseDuration(v.video.duration)
+            })) : [];
         }
 
         async function getPornhub(tag, mode, topX, maxPage) {
-            try {
-                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
-                const sort = mode === 'best' ? '&ordering=rating' : '';
-                const target = `https://www.pornhub.com/webmasters/search?search=${encodeURIComponent(tag)}&page=${page}${sort}`;
+            const page = mode === 'best' ? 1 : getRandomPage(maxPage);
+            const sort = mode === 'best' ? '&ordering=rating' : '';
+            const target = `https://www.pornhub.com/webmasters/search?search=${encodeURIComponent(tag)}&page=${page}${sort}`;
 
-                const d = await fetchJSON(viaProxy(target));
-                let vids = d.videos ? d.videos.map(v => ({
-                    title: v.title, embed: v.embed || `https://www.pornhub.com/embed/${v.video_id}`, source: 'Pornhub',
-                    tags: extractTags(v, 'Pornhub'), durationSec: parseDuration(v.duration)
-                })) : [];
-                if (mode === 'best') vids = vids.slice(0, topX);
-                return vids;
-            } catch (e) { console.warn('Pornhub failed:', e); return []; }
+            const d = await fetchJSON(viaProxy(target));
+            let vids = d.videos ? d.videos.map(v => ({
+                title: v.title, embed: v.embed || `https://www.pornhub.com/embed/${v.video_id}`, source: 'Pornhub',
+                tags: extractTags(v, 'Pornhub'), durationSec: parseDuration(v.duration)
+            })) : [];
+            if (mode === 'best') vids = vids.slice(0, topX);
+            return vids;
         }
 
         async function getYouPorn(tag, mode, topX, maxPage) {
-            try {
-                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
-                const sort = mode === 'best' ? '&ordering=rating' : '';
-                const target = `https://www.youporn.com/api/webmasters/search?search=${encodeURIComponent(tag)}&page=${page}${sort}`;
+            const page = mode === 'best' ? 1 : getRandomPage(maxPage);
+            const sort = mode === 'best' ? '&ordering=rating' : '';
+            const target = `https://www.youporn.com/api/webmasters/search?search=${encodeURIComponent(tag)}&page=${page}${sort}`;
 
-                const d = await fetchJSON(viaProxy(target));
-                const rawVids = d.videos || d.video;
-                let vids = rawVids ? rawVids.map(v => ({
-                    title: v.title, embed: v.embed, source: 'YouPorn',
-                    tags: extractTags(v, 'YouPorn'), durationSec: parseDuration(v.duration)
-                })) : [];
-                if (mode === 'best') vids = vids.slice(0, topX);
-                return vids;
-            } catch (e) { console.warn('YouPorn failed:', e); return []; }
+            const d = await fetchJSON(viaProxy(target));
+            const rawVids = d.videos || d.video;
+            let vids = rawVids ? rawVids.map(v => ({
+                title: v.title, embed: v.embed, source: 'YouPorn',
+                tags: extractTags(v, 'YouPorn'), durationSec: parseDuration(v.duration)
+            })) : [];
+            if (mode === 'best') vids = vids.slice(0, topX);
+            return vids;
         }
 
         async function getTube8(tag, mode, topX, maxPage) {
-            try {
-                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
-                const sort = mode === 'best' ? '&ordering=rating' : '';
-                const target = `https://api.tube8.com/api.php?action=searchVideos&q=${encodeURIComponent(tag)}&output=json&page=${page}${sort}`;
+            const page = mode === 'best' ? 1 : getRandomPage(maxPage);
+            const sort = mode === 'best' ? '&ordering=rating' : '';
+            const target = `https://api.tube8.com/api.php?action=searchVideos&q=${encodeURIComponent(tag)}&output=json&page=${page}${sort}`;
 
-                const d = await fetchJSON(viaProxy(target));
-                let vids = d.videos ? d.videos.map(v => ({
-                    title: v.video.title, embed: v.video.embed_url, source: 'Tube8',
-                    tags: extractTags(v.video, 'Tube8'), durationSec: parseDuration(v.video.duration)
-                })) : [];
-                if (mode === 'best') vids = vids.slice(0, topX);
-                return vids;
-            } catch (e) { console.warn('Tube8 failed:', e); return []; }
+            const d = await fetchJSON(viaProxy(target));
+            let vids = d.videos ? d.videos.map(v => ({
+                title: v.video.title, embed: v.video.embed_url, source: 'Tube8',
+                tags: extractTags(v.video, 'Tube8'), durationSec: parseDuration(v.video.duration)
+            })) : [];
+            if (mode === 'best') vids = vids.slice(0, topX);
+            return vids;
         }
 
         /* --- UI UPDATER --- */
@@ -636,19 +686,15 @@
         /* --- CORE LOGIC --- */
         async function fetchPool(searchTag, dur, mode, topX, maxPageLevel) {
             
-            // Respect Source Picker
             const promises = [];
-            if (activeSources.includes('eporner')) promises.push(getEPorner(searchTag, mode, topX, maxPageLevel));
-            if (activeSources.includes('redtube')) promises.push(getRedTube(searchTag, mode, topX, maxPageLevel));
-            if (activeSources.includes('pornhub')) promises.push(getPornhub(searchTag, mode, topX, maxPageLevel));
-            if (activeSources.includes('youporn')) promises.push(getYouPorn(searchTag, mode, topX, maxPageLevel));
-            if (activeSources.includes('tube8')) promises.push(getTube8(searchTag, mode, topX, maxPageLevel));
-            if (activeSources.includes('rule34')) promises.push(getRule34(searchTag, mode, topX, maxPageLevel));
+            if (activeSources.includes('eporner')) promises.push(wrapFetch('eporner', getEPorner(searchTag, mode, topX, maxPageLevel)));
+            if (activeSources.includes('redtube')) promises.push(wrapFetch('redtube', getRedTube(searchTag, mode, topX, maxPageLevel)));
+            if (activeSources.includes('pornhub')) promises.push(wrapFetch('pornhub', getPornhub(searchTag, mode, topX, maxPageLevel)));
+            if (activeSources.includes('youporn')) promises.push(wrapFetch('youporn', getYouPorn(searchTag, mode, topX, maxPageLevel)));
+            if (activeSources.includes('tube8'))   promises.push(wrapFetch('tube8', getTube8(searchTag, mode, topX, maxPageLevel)));
+            if (activeSources.includes('rule34'))  promises.push(wrapFetch('rule34', getRule34(searchTag, mode, topX, maxPageLevel)));
 
-            if (promises.length === 0) {
-                alert("Please select at least one source below the search bar!");
-                return [];
-            }
+            if (promises.length === 0) return [];
 
             const results = await Promise.all(promises);
             let combined = results.flat();
@@ -713,12 +759,25 @@
             if (!searchTag) return;
             if (activeSources.length === 0) return alert("Please select at least one source below the search bar!");
 
+            // Check if we can use the preloaded buffer
+            const searchStateHash = `${searchTag}|${dur}|${mode}|${topX}|${activeCategoryName}|${activeSources.join()}|${bannedTags.join()}`;
+            
+            if (searchStateHash === currentSearchKey && videoBuffer.length > 0) {
+                document.getElementById('videoTitle').innerText = "Loading from Buffer ⚡...";
+                setTimeout(() => finalizeSpin(videoBuffer, true), 300); // Small UI delay for effect
+                return;
+            }
+
+            // Fresh Search Required
+            currentSearchKey = searchStateHash;
+            videoBuffer = []; // Clear buffer
+            document.querySelectorAll('.badge').forEach(b => b.innerText = ''); // Clear old badges
             document.getElementById('videoTagsContainer').innerHTML = "";
 
             if (mode === 'best') {
                 document.getElementById('videoTitle').innerText = `Fetching Top ${topX} Highest Rated...`;
                 let pool = await fetchPool(searchTag, dur, mode, topX, 1);
-                finalizeSpin(pool);
+                finalizeSpin(pool, false);
             } else {
                 document.getElementById('videoTitle').innerText = "Scouring the Deepest Pages (1 - 50)...";
                 let pool = await fetchPool(searchTag, dur, mode, topX, 50); 
@@ -728,17 +787,28 @@
                     pool = await fetchPool(searchTag, dur, mode, topX, 3);
                 }
 
-                finalizeSpin(pool);
+                finalizeSpin(pool, false);
             }
         }
 
-        function finalizeSpin(combinedPool) {
+        function finalizeSpin(combinedPool, fromBuffer) {
             if (combinedPool.length === 0) {
                 document.getElementById('videoTitle').innerText = "No videos found matching your strict filters.";
                 return;
             }
             
-            currentVideo = combinedPool[Math.floor(Math.random() * combinedPool.length)];
+            const randomIndex = Math.floor(Math.random() * combinedPool.length);
+            currentVideo = combinedPool[randomIndex];
+            
+            // Remove the played video from the pool to prevent duplicates
+            combinedPool.splice(randomIndex, 1);
+            
+            // If it's a fresh search, save the remaining pool to the buffer and save search history
+            if (!fromBuffer) {
+                videoBuffer = combinedPool; 
+                addRecentSearch(document.getElementById('tagInput').value.trim());
+            }
+
             window.history.replaceState({}, document.title, window.location.pathname);
             loadVideoIntoPlayer();
         }
@@ -748,6 +818,8 @@
             initTheme();
             initSourcesUI();
             renderCustomChips(); 
+            updateRecentSearches();
+            
             const params = new URLSearchParams(window.location.search);
             if (params.has('embed')) {
                 currentVideo = { embed: params.get('embed'), title: params.get('title') || 'Shared Video', source: params.get('source') || 'Unknown', tags: [], durationSec: 0 };
