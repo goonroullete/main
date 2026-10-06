@@ -131,7 +131,7 @@
         
         <!-- Mode Selector -->
         <select id="modeSelect" onchange="toggleMode()">
-            <option value="random">Shuffle Mode</option>
+            <option value="random">Endless Shuffle</option>
             <option value="best">Best Videos Mode</option>
         </select>
         
@@ -141,7 +141,7 @@
             <input type="number" id="topXInput" value="50" min="5" max="100" style="width: 70px; padding: 8px;" title="Fetch Top X videos per site">
         </div>
 
-        <button class="spin-btn" onclick="fetchAndSpin()">SPIN 🎰</button>
+        <button class="spin-btn" onclick="initSpin()">SPIN 🎰</button>
     </div>
 
     <div class="custom-tags-container" id="customTagsContainer"></div>
@@ -217,6 +217,25 @@
         </div>
     </div>
 
+    <!-- Roadmap Modal -->
+    <div id="roadmapModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🚀 Planned Features</h2>
+                <button class="close-btn" onclick="closeModal('roadmapModal')">&times;</button>
+            </div>
+            <p style="color: #aaa; font-size: 0.95rem; margin-top: 0;">We are currently upgrading from a local static site to a Cloud Database (Firebase). Here is what is coming next:</p>
+            <div style="background: var(--surface-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+                <h3 style="margin: 0 0 5px 0; color: var(--accent-color);">💬 Global Comments & Interactions</h3>
+                <p style="margin: 0; font-size: 0.9rem; color: #aaa;">Leave funny timestamps and reactions on videos, synced globally.</p>
+            </div>
+            <div style="background: var(--surface-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+                <h3 style="margin: 0 0 5px 0; color: var(--accent-color);">🏆 Voting & Leaderboards</h3>
+                <p style="margin: 0; font-size: 0.9rem; color: #aaa;">A cross-device "Like" system to rank the Top 10 spins of the week.</p>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- GLOBAL STATE & DATABASES ---
         let currentVideo = null; 
@@ -281,7 +300,7 @@
         }
         function spinCustomChip(tag) {
             document.getElementById('tagInput').value = tag;
-            fetchAndSpin();
+            initSpin();
         }
 
         // --- BLACKLIST TAG LOGIC ---
@@ -290,7 +309,7 @@
             if (!bannedTags.includes(cleanTag)) {
                 bannedTags.push(cleanTag);
                 localStorage.setItem('roulette_blacklist', JSON.stringify(bannedTags));
-                fetchAndSpin(); 
+                initSpin(); 
             }
         }
         function unbanTag(tag) {
@@ -417,7 +436,7 @@
             if (catName) activeCategoryName = catName; 
 
             document.getElementById('tagInput').value = searchQuery;
-            fetchAndSpin();
+            initSpin();
         }
 
         function showSubTabs(type, element) {
@@ -448,38 +467,32 @@
             return tags.map(t => t.toLowerCase());
         }
 
-        // 🚀 THE BIG 6 API FETCHERS
-        const getDeepPage = () => Math.floor(Math.random() * 5) + 1;
+        // 🚀 UPGRADED: Dynamic Paging System
+        // MaxPage is now dynamic so we can dive deep (50 pages) or shallow (3 pages) based on need.
+        const getRandomPage = (maxPage) => Math.floor(Math.random() * maxPage) + 1;
 
-        async function getRule34(tag, mode, topX) {
+        async function getRule34(tag, mode, topX, maxPage) {
             try {
-                // Ensure we only look for videos
                 let r34Tags = `${tag} video`;
-
-                // Built-in community quality filter!
                 if (mode === 'best') r34Tags += ` sort:score:desc`;
                 else r34Tags += ` score:>40`; 
-
                 const limit = mode === 'best' ? topX : 100;
-                const page = mode === 'best' ? 0 : Math.floor(Math.random() * 10);
+                // Rule34 PID handles pages differently. Keep it slightly lower to avoid 404s.
+                const page = mode === 'best' ? 0 : Math.floor(Math.random() * (maxPage * 2)); 
 
                 const r = await fetch(`https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&limit=${limit}&pid=${page}&tags=${encodeURIComponent(r34Tags)}`);
                 const d = await r.json();
 
                 return d ? d.map(v => ({
-                    title: `Animation #${v.id}`, 
-                    embed: v.file_url, // Direct media link plays natively in iframe!
-                    source: 'Rule34.xxx',
-                    tags: v.tags.split(' ').filter(Boolean),
-                    durationSec: 60 // Fake duration so it bypasses our 0-second check
+                    title: `Animation #${v.id}`, embed: v.file_url, source: 'Rule34.xxx', tags: v.tags.split(' ').filter(Boolean), durationSec: 60 
                 })) : [];
             } catch (e) { return []; }
         }
 
-        async function getEPorner(tag, mode, topX) { 
+        async function getEPorner(tag, mode, topX, maxPage) { 
             try { 
                 const limit = mode === 'best' ? topX : 100;
-                const page = mode === 'best' ? 1 : getDeepPage();
+                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
                 const sort = mode === 'best' ? '&order=top-all-time' : '';
                 const r = await fetch(`https://www.eporner.com/api/v2/video/search/?query=${encodeURIComponent(tag)}&format=json&per_page=${limit}&page=${page}${sort}`); 
                 const d = await r.json(); 
@@ -487,10 +500,10 @@
             } catch (e) { return []; } 
         }
 
-        async function getRedTube(tag, mode, topX) { 
+        async function getRedTube(tag, mode, topX, maxPage) { 
             try { 
                 const limit = mode === 'best' ? topX : 100;
-                const page = mode === 'best' ? 1 : getDeepPage();
+                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
                 const sort = mode === 'best' ? '&ordering=rating' : '';
                 const r = await fetch(`https://api.redtube.com/?data=redtube.Videos.searchVideos&search=${encodeURIComponent(tag)}&output=json&limit=${limit}&page=${page}${sort}`); 
                 const d = await r.json(); 
@@ -498,9 +511,9 @@
             } catch (e) { return []; } 
         }
 
-        async function getPornhub(tag, mode, topX) { 
+        async function getPornhub(tag, mode, topX, maxPage) { 
             try { 
-                const page = mode === 'best' ? 1 : getDeepPage();
+                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
                 const sort = mode === 'best' ? '&ordering=rating' : '';
                 const r = await fetch(`https://www.pornhub.com/webmasters/search?search=${encodeURIComponent(tag)}&page=${page}${sort}`); 
                 const d = await r.json(); 
@@ -510,9 +523,9 @@
             } catch (e) { return []; } 
         }
 
-        async function getYouPorn(tag, mode, topX) { 
+        async function getYouPorn(tag, mode, topX, maxPage) { 
             try { 
-                const page = mode === 'best' ? 1 : getDeepPage();
+                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
                 const sort = mode === 'best' ? '&ordering=rating' : '';
                 const r = await fetch(`https://www.youporn.com/api/webmasters/search?search=${encodeURIComponent(tag)}&page=${page}${sort}`); 
                 const d = await r.json(); 
@@ -523,9 +536,9 @@
             } catch (e) { return []; } 
         }
 
-        async function getTube8(tag, mode, topX) { 
+        async function getTube8(tag, mode, topX, maxPage) { 
             try { 
-                const page = mode === 'best' ? 1 : getDeepPage();
+                const page = mode === 'best' ? 1 : getRandomPage(maxPage);
                 const sort = mode === 'best' ? '&ordering=rating' : '';
                 const r = await fetch(`https://api.tube8.com/api.php?action=searchVideos&q=${encodeURIComponent(tag)}&output=json&page=${page}${sort}`); 
                 const d = await r.json(); 
@@ -553,27 +566,15 @@
             addToHistory(currentVideo);
         }
 
-        /* --- CORE LOGIC --- */
-        async function fetchAndSpin() {
-            const searchTag = document.getElementById('tagInput').value.trim();
-            const dur = document.getElementById('durationSelect').value;
-            const mode = document.getElementById('modeSelect').value;
-            
-            let topX = parseInt(document.getElementById('topXInput').value) || 50;
-            if (topX > 100) topX = 100;
-
-            if (!searchTag) return;
-
-            document.getElementById('videoTitle').innerText = mode === 'best' ? `Fetching Top ${topX} Highest Rated...` : "Scouring Thousands of Videos...";
-            document.getElementById('videoTagsContainer').innerHTML = "";
-
+        /* --- CORE LOGIC (WITH DEEP DIVE FALLBACK) --- */
+        async function fetchPool(searchTag, dur, mode, topX, maxPageLevel) {
             const results = await Promise.all([ 
-                getEPorner(searchTag, mode, topX), 
-                getRedTube(searchTag, mode, topX), 
-                getPornhub(searchTag, mode, topX), 
-                getYouPorn(searchTag, mode, topX), 
-                getTube8(searchTag, mode, topX),
-                getRule34(searchTag, mode, topX) 
+                getEPorner(searchTag, mode, topX, maxPageLevel), 
+                getRedTube(searchTag, mode, topX, maxPageLevel), 
+                getPornhub(searchTag, mode, topX, maxPageLevel), 
+                getYouPorn(searchTag, mode, topX, maxPageLevel), 
+                getTube8(searchTag, mode, topX, maxPageLevel),
+                getRule34(searchTag, mode, topX, maxPageLevel) 
             ]);
             let combined = results.flat();
 
@@ -623,12 +624,49 @@
                 });
             }
 
-            if (combined.length === 0) {
+            return combined;
+        }
+
+        async function initSpin() {
+            const searchTag = document.getElementById('tagInput').value.trim();
+            const dur = document.getElementById('durationSelect').value;
+            const mode = document.getElementById('modeSelect').value;
+            
+            let topX = parseInt(document.getElementById('topXInput').value) || 50;
+            if (topX > 100) topX = 100;
+
+            if (!searchTag) return;
+
+            document.getElementById('videoTagsContainer').innerHTML = "";
+
+            if (mode === 'best') {
+                document.getElementById('videoTitle').innerText = `Fetching Top ${topX} Highest Rated...`;
+                let pool = await fetchPool(searchTag, dur, mode, topX, 1); // Best mode doesn't need deep paging
+                finalizeSpin(pool);
+            } else {
+                // ENDLESS SHUFFLE MODE: The Intelligent Fallback System
+                document.getElementById('videoTitle').innerText = "Scouring the Deepest Pages (1 - 50)...";
+                
+                // Attempt 1: Deep Dive (Look for videos deep in the archives)
+                let pool = await fetchPool(searchTag, dur, mode, topX, 50); 
+                
+                // Attempt 2: Shallow Rescue (If the deep dive found nothing because the tag is too rare)
+                if (pool.length === 0) {
+                    document.getElementById('videoTitle').innerText = "Deep pages empty. Running Shallow Rescue...";
+                    pool = await fetchPool(searchTag, dur, mode, topX, 3);
+                }
+
+                finalizeSpin(pool);
+            }
+        }
+
+        function finalizeSpin(combinedPool) {
+            if (combinedPool.length === 0) {
                 document.getElementById('videoTitle').innerText = "No videos found matching your strict filters.";
                 return;
             }
             
-            currentVideo = combined[Math.floor(Math.random() * combined.length)];
+            currentVideo = combinedPool[Math.floor(Math.random() * combinedPool.length)];
             window.history.replaceState({}, document.title, window.location.pathname);
             loadVideoIntoPlayer();
         }
@@ -642,7 +680,7 @@
                 currentVideo = { embed: params.get('embed'), title: params.get('title') || 'Shared Video', source: params.get('source') || 'Unknown', tags: [], durationSec: 0 };
                 loadVideoIntoPlayer();
             } else {
-                fetchAndSpin(); 
+                initSpin(); 
             }
         };
     </script>
