@@ -135,7 +135,7 @@
             <option value="best">Best Videos Mode</option>
         </select>
         
-        <!-- Top X Input (Hidden by default) -->
+        <!-- Top X Input -->
         <div id="topXContainer" style="display: none; align-items: center; gap: 5px;">
             <label for="topXInput" style="font-size: 0.85rem; font-weight: bold; color: #aaa;">Top:</label>
             <input type="number" id="topXInput" value="50" min="5" max="100" style="width: 70px; padding: 8px;" title="Fetch Top X videos per site">
@@ -217,29 +217,10 @@
         </div>
     </div>
 
-    <!-- Roadmap Modal -->
-    <div id="roadmapModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>🚀 Planned Features</h2>
-                <button class="close-btn" onclick="closeModal('roadmapModal')">&times;</button>
-            </div>
-            <p style="color: #aaa; font-size: 0.95rem; margin-top: 0;">We are currently upgrading from a local static site to a Cloud Database (Firebase). Here is what is coming next:</p>
-            <div style="background: var(--surface-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
-                <h3 style="margin: 0 0 5px 0; color: var(--accent-color);">💬 Global Comments & Interactions</h3>
-                <p style="margin: 0; font-size: 0.9rem; color: #aaa;">Leave funny timestamps and reactions on videos, synced globally.</p>
-            </div>
-            <div style="background: var(--surface-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
-                <h3 style="margin: 0 0 5px 0; color: var(--accent-color);">🏆 Voting & Leaderboards</h3>
-                <p style="margin: 0; font-size: 0.9rem; color: #aaa;">A cross-device "Like" system to rank the Top 10 spins of the week.</p>
-            </div>
-        </div>
-    </div>
-
     <script>
         // --- GLOBAL STATE & DATABASES ---
         let currentVideo = null; 
-        let activeCategoryName = 'jav'; // Tracks which master tab is open to prevent leakage
+        let activeCategoryName = 'jav'; 
         let savedFavorites = JSON.parse(localStorage.getItem('roulette_favorites')) || [];
         let watchHistory = JSON.parse(localStorage.getItem('roulette_history')) || [];
         let bannedTags = JSON.parse(localStorage.getItem('roulette_blacklist')) || [];
@@ -432,9 +413,8 @@
             parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             element.classList.add('active');
             
-            // Hide subtabs if a non-animation main tab is clicked
             if (!isSub) document.getElementById('animationsSubTabs').style.display = 'none';
-            if (catName) activeCategoryName = catName; // Track current context
+            if (catName) activeCategoryName = catName; 
 
             document.getElementById('tagInput').value = searchQuery;
             fetchAndSpin();
@@ -448,7 +428,6 @@
             if (type === 'animations') {
                 const subTabs = document.getElementById('animationsSubTabs');
                 subTabs.style.display = 'flex';
-                // Trigger the first subtab automatically
                 subTabs.children[0].click();
             }
         }
@@ -469,7 +448,33 @@
             return tags.map(t => t.toLowerCase());
         }
 
+        // 🚀 THE BIG 6 API FETCHERS
         const getDeepPage = () => Math.floor(Math.random() * 5) + 1;
+
+        async function getRule34(tag, mode, topX) {
+            try {
+                // Ensure we only look for videos
+                let r34Tags = `${tag} video`;
+
+                // Built-in community quality filter!
+                if (mode === 'best') r34Tags += ` sort:score:desc`;
+                else r34Tags += ` score:>40`; 
+
+                const limit = mode === 'best' ? topX : 100;
+                const page = mode === 'best' ? 0 : Math.floor(Math.random() * 10);
+
+                const r = await fetch(`https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&limit=${limit}&pid=${page}&tags=${encodeURIComponent(r34Tags)}`);
+                const d = await r.json();
+
+                return d ? d.map(v => ({
+                    title: `Animation #${v.id}`, 
+                    embed: v.file_url, // Direct media link plays natively in iframe!
+                    source: 'Rule34.xxx',
+                    tags: v.tags.split(' ').filter(Boolean),
+                    durationSec: 60 // Fake duration so it bypasses our 0-second check
+                })) : [];
+            } catch (e) { return []; }
+        }
 
         async function getEPorner(tag, mode, topX) { 
             try { 
@@ -567,11 +572,11 @@
                 getRedTube(searchTag, mode, topX), 
                 getPornhub(searchTag, mode, topX), 
                 getYouPorn(searchTag, mode, topX), 
-                getTube8(searchTag, mode, topX) 
+                getTube8(searchTag, mode, topX),
+                getRule34(searchTag, mode, topX) 
             ]);
             let combined = results.flat();
 
-            // 1. Aggressive Spam Nuke (Cam & AI)
             const isCamSearch = searchTag.toLowerCase().includes('cam');
             combined = combined.filter(v => {
                 const titleStr = v.title.toLowerCase();
@@ -587,26 +592,21 @@
                 return true;
             });
 
-            // 2. Strict Category Leakage Filter
             combined = combined.filter(v => {
                 const titleStr = v.title.toLowerCase();
                 const tagsStr = (v.tags || []).join(' ').toLowerCase();
                 const searchSpace = titleStr + " " + tagsStr;
 
                 if (activeCategoryName === 'jav') {
-                    // Exclude pure animations, amateurs, and western studio content
                     if (/\b(hentai|sfm|3d|anime|cartoon|amateur|homemade|onlyfans|western)\b/i.test(searchSpace)) return false;
                 } else if (activeCategoryName === 'animations') {
-                    // Exclude all live action, cosplay, and IRL actors
                     if (/\b(jav|cosplay|amateur|homemade|real|irl|korean|asian)\b/i.test(searchSpace)) return false;
                 } else if (activeCategoryName === 'amateur') {
-                    // Exclude studio/professional production and animations
                     if (/\b(jav|hentai|sfm|3d|anime|cartoon|japanese|studio)\b/i.test(searchSpace)) return false;
                 }
                 return true;
             });
 
-            // 3. Deep String Match Blacklist Filter
             if (bannedTags.length > 0) {
                 combined = combined.filter(v => {
                     const searchSpace = (v.title + " " + (v.tags || []).join(' ')).toLowerCase();
@@ -614,7 +614,6 @@
                 });
             }
 
-            // 4. Duration Filter
             if (dur !== 'any') {
                 combined = combined.filter(v => {
                     if (v.durationSec === 0) return false; 
