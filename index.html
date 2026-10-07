@@ -588,7 +588,7 @@
             const page = mode === 'best' ? 0 : Math.floor(Math.random() * (maxPage * 2));
 
             const target = `https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&limit=${limit}&pid=${page}&tags=${encodeURIComponent(r34Tags)}&api_key=${R34_API_KEY}&user_id=${R34_USER_ID}`;
-            const d = await fetchJSON(viaProxy(target));
+            const d = await fetchJSON(target);
 
             return Array.isArray(d) ? d.map(v => ({
                 title: `Animation #${v.id}`, embed: v.file_url, source: 'Rule34.xxx',
